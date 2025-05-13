@@ -1301,7 +1301,10 @@ export default {
       return this.flt(sum, this.currency_precision);
     },
     subtotal() {
+      console.log("this.discount_amount: ", this.discount_amount);
       this.close_payments();
+      if (this.additional_discount_percentage > 0)
+        this.update_discount_umount();
       let sum = 0;
       this.items.forEach((item) => {
         sum += flt(item.qty) * flt(item.rate);
@@ -1322,6 +1325,26 @@ export default {
   },
 
   methods: {
+    verify_fs_discount() {
+      const vm = this;
+      frappe.call({
+        method: 'posawesome.posawesome.api.posapp.get_customer_group',
+        args: {
+          customer: vm.customer
+        },
+        async: false,
+        callback: (r) => {
+          if (r.message) {
+            if (r.message == "Individual") {
+              vm.additional_discount_percentage = vm.pos_profile.posa_fs_customer_discount;
+            }
+            else {
+              vm.additional_discount_percentage = 0;
+            }
+          }
+        }
+      })
+    },
     fs_offline_switch() {
       this.fs_offline = !this.fs_offline;
       if (this.fs_offline) {
@@ -2754,6 +2777,7 @@ export default {
       evntBus.$emit("update_customer_price_list", price_list);
     },
     update_discount_umount() {
+      //console.log("Lable-D");
       const value = flt(this.additional_discount_percentage);
       if (value >= -100 && value <= 100) {
         this.discount_amount = (this.Total * value) / 100;
@@ -3884,8 +3908,8 @@ export default {
           this.pending_fs_bills_check(customer);
         }
       }
-      if (customer && this.pos_profile.posa_allow_sales_order && frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center')
-        this.get_customer_type(customer); // for setting "Sales Orders" for B2B customers, with customer_type as "company"
+      //if (customer && this.pos_profile.posa_allow_sales_order && frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center')
+      //  this.get_customer_type(customer); // for setting "Sales Orders" for B2B customers, with customer_type as "company"
     });
     evntBus.$on("reset_fs_variables", () => {
       this.reset_fs_variables();
@@ -4016,6 +4040,8 @@ export default {
       evntBus.$emit("set_customer", this.customer);
       this.fetch_customer_details();
       this.set_delivery_charges();
+      if (this.customer && this.pos_profile.company == "Auroville Bakery")
+        this.verify_fs_discount();
     },
     customer_info() {
       evntBus.$emit("set_customer_info_to_edit", this.customer_info);
@@ -4047,7 +4073,7 @@ export default {
         this.additional_discount_percentage = 0;
       }
       else if (this.pos_profile.posa_use_percentage_discount) {
-        console.log("this.discount_amount: ", this.discount_amount);
+        //console.log("this.discount_amount: ", this.discount_amount);
         if (this.invoice_doc.is_return)
           this.additional_discount_percentage = this.return_doc.additional_discount_percentage
         else
