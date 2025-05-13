@@ -3950,11 +3950,15 @@ export default {
       });
     });
     evntBus.$on("load_return_invoice", (data) => {
+      //console.log("data.return_doc.discount_amount: ", data.return_doc.discount_amount);
+      //console.log("data.return_doc.additional_discount_percentage: ", data.return_doc.additional_discount_percentage);
       this.new_invoice(data.invoice_doc);
-      this.discount_amount = -data.return_doc.discount_amount;
+      this.discount_amount = -(data.return_doc.total - data.return_doc.discount_amount);
       this.additional_discount_percentage =
         -data.return_doc.additional_discount_percentage;
       this.return_doc = data.return_doc;
+      //console.log("this.return_doc.additional_discount_percentage: ", this.return_doc.additional_discount_percentage)
+      //console.log("this.discount_amount: ", this.discount_amount);
     });
     evntBus.$on("set_new_line", (data) => {
       this.new_line = data;
@@ -4038,11 +4042,17 @@ export default {
       evntBus.$emit("update_invoice_type", this.invoiceType);
     },
     discount_amount() {
+      //console.log("this.invoice_doc.is_return: ", this.invoice_doc.is_return);
       if (!this.discount_amount || this.discount_amount == 0) {
         this.additional_discount_percentage = 0;
-      } else if (this.pos_profile.posa_use_percentage_discount) {
-        this.additional_discount_percentage =
-          (this.discount_amount / this.Total) * 100;
+      }
+      else if (this.pos_profile.posa_use_percentage_discount) {
+        console.log("this.discount_amount: ", this.discount_amount);
+        if (this.invoice_doc.is_return)
+          this.additional_discount_percentage = this.return_doc.additional_discount_percentage
+        else
+          this.additional_discount_percentage = (this.discount_amount / this.Total) * 100;
+        console.log("this.additional_discount_percentage: ", this.additional_discount_percentage);
       } else {
         this.additional_discount_percentage = 0;
       }

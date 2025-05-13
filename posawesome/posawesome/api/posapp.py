@@ -569,42 +569,7 @@ def update_invoice(data, container_return=None):
     invoice_doc.set_missing_values()
     invoice_doc.flags.ignore_permissions = True
     frappe.flags.ignore_account_permission = True
-
-    if invoice_doc.is_return and invoice_doc.return_against:
-        ref_doc = frappe.get_cached_doc(invoice_doc.doctype, invoice_doc.return_against)
-        if not ref_doc.update_stock:
-            invoice_doc.update_stock = 0
-        if len(invoice_doc.payments) == 0:
-            invoice_doc.payments = ref_doc.payments
-
-        if invoice_doc.total != 0:
-            invoice_doc.paid_amount = invoice_doc.total
-        elif invoice_doc.grand_total != 0:
-            invoice_doc.paid_amount = invoice_doc.grand_total
-        else:
-            invoice_doc.paid_amount = invoice_doc.rounded_total
-        """ invoice_doc.paid_amount = (
-            invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
-        ) """
-
-        for payment in invoice_doc.payments:
-            if payment.default:
-                payment.amount = invoice_doc.paid_amount
-
-    elif invoice_doc.is_return and container_return:
-        invoice_doc.update_stock = 1
-        if invoice_doc.total != 0:
-            invoice_doc.paid_amount = invoice_doc.total
-        elif invoice_doc.grand_total != 0:
-            invoice_doc.paid_amount = invoice_doc.grand_total
-        else:
-            invoice_doc.paid_amount = invoice_doc.rounded_total
-        #invoice_doc.paid_amount = (
-        #    invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
-        #)
-        for payment in invoice_doc.payments:
-            if payment.default:
-                payment.amount = invoice_doc.paid_amount
+    #frappe.throw(str(invoice_doc.as_dict()))
 
     allow_zero_rated_items = frappe.get_cached_value(
         "POS Profile", invoice_doc.pos_profile, "posa_allow_zero_rated_items"
@@ -621,6 +586,7 @@ def update_invoice(data, container_return=None):
         else:
             item.is_free_item = 0
         add_taxes_from_tax_template(item, invoice_doc)
+        #frappe.throw("Item: {0}, invoice_doc: {1}".format(str(item.as_dict()), str(invoice_doc.as_dict())))
 
     if frappe.get_cached_value(
         "POS Profile", invoice_doc.pos_profile, "posa_tax_inclusive"
@@ -629,6 +595,45 @@ def update_invoice(data, container_return=None):
             for tax in invoice_doc.taxes:
                 tax.included_in_print_rate = 1
                 #frappe.throw(str(tax.as_dict()))
+
+    # moving the returns code block after the tax template is added, for tax calculations
+    if invoice_doc.is_return and invoice_doc.return_against:
+        invoice_doc.calculate_taxes_and_totals() # this needs to be done at this stage for the returns save() validation to succeed
+
+        ref_doc = frappe.get_cached_doc(invoice_doc.doctype, invoice_doc.return_against)
+        if not ref_doc.update_stock:
+            invoice_doc.update_stock = 0
+        if len(invoice_doc.payments) == 0:
+            invoice_doc.payments = ref_doc.payments
+
+        if invoice_doc.grand_total != 0:
+            invoice_doc.paid_amount = invoice_doc.grand_total
+        elif invoice_doc.total != 0:
+            invoice_doc.paid_amount = invoice_doc.total
+        else:
+            invoice_doc.paid_amount = invoice_doc.rounded_total
+        """ invoice_doc.paid_amount = (
+            invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
+        ) """
+
+        for payment in invoice_doc.payments:
+            if payment.default:
+                payment.amount = invoice_doc.paid_amount
+
+    elif invoice_doc.is_return and container_return:
+        invoice_doc.update_stock = 1
+        if invoice_doc.grand_total != 0:
+            invoice_doc.paid_amount = invoice_doc.grand_total
+        elif invoice_doc.total != 0:
+            invoice_doc.paid_amount = invoice_doc.total
+        else:
+            invoice_doc.paid_amount = invoice_doc.rounded_total
+        #invoice_doc.paid_amount = (
+        #    invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
+        #)
+        for payment in invoice_doc.payments:
+            if payment.default:
+                payment.amount = invoice_doc.paid_amount
 
     today_date = getdate()
     if (
@@ -639,6 +644,7 @@ def update_invoice(data, container_return=None):
 
     #frappe.throw(str(invoice_doc.taxes[0].as_dict()))
     try:
+        #frappe.throw(_("Total {0}, Rounded Total {1}, Grand Total {2}").format(flt(invoice_doc.total), flt(invoice_doc.rounded_total), flt(invoice_doc.grand_total)))
         invoice_doc.save()
     except Exception as err:
         frappe.msgprint(str(err))
