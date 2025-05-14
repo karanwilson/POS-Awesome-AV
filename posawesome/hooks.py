@@ -175,6 +175,7 @@ fixtures = [
                     "POS Profile-posa_pos_awesome_advance_settings",
                     "Batch-posa_batch_price",
                     "POS Profile-posa_max_discount_allowed",
+                    "POS Profile-posa_fs_customer_discount", # FS Account Customer Discounts
                     "POS Profile-posa_allow_return",
                     "POS Profile-posa_col_1",
                     "POS Profile-posa_scale_barcode_start",

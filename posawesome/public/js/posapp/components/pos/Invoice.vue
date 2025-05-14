@@ -1301,7 +1301,10 @@ export default {
       return this.flt(sum, this.currency_precision);
     },
     subtotal() {
+      console.log("this.discount_amount: ", this.discount_amount);
       this.close_payments();
+      if (this.additional_discount_percentage > 0)
+        this.update_discount_umount();
       let sum = 0;
       this.items.forEach((item) => {
         sum += flt(item.qty) * flt(item.rate);
@@ -1322,6 +1325,26 @@ export default {
   },
 
   methods: {
+    verify_fs_discount() {
+      const vm = this;
+      frappe.call({
+        method: 'posawesome.posawesome.api.posapp.get_customer_group',
+        args: {
+          customer: vm.customer
+        },
+        async: false,
+        callback: (r) => {
+          if (r.message) {
+            if (r.message == "Individual") {
+              vm.additional_discount_percentage = vm.pos_profile.posa_fs_customer_discount;
+            }
+            else {
+              vm.additional_discount_percentage = 0;
+            }
+          }
+        }
+      })
+    },
     fs_offline_switch() {
       this.fs_offline = !this.fs_offline;
       if (this.fs_offline) {
@@ -2460,7 +2483,7 @@ export default {
             return value;
           }
           this.items.forEach((item) => {
-            let return_item;
+            let return_item = "";
             if (this.container_return) {
               //console.log("this.container_return: ", this.container_return);
               return_item = this.return_doc.items.find(
@@ -2469,13 +2492,20 @@ export default {
               );
             }
             else {
+              //console.log("return_item: ", return_item);
+              //console.log("item: ", item);
+              //console.log("this.return_doc.items: ", this.return_doc.items);
               return_item = this.return_doc.items.find(
                 //(element) => element.batch_no == item.batch_no //&& Math.abs(element.qty) == Math.abs(item.qty)
                 (element) => ((element.item_code == item.item_code) && (element.batch_no == item.batch_no) && (element.posa_row_id == item.posa_row_id))
               );
+              if (!return_item) {
+                return_item = this.return_doc.items.find(
+                  (element) => ((element.item_code == item.item_code) && (element.batch_no == item.batch_no))
+              );
+              }
+              //console.log("return_item: ", return_item);
             }
-            //console.log("return_item: ", return_item);
-            //console.log("return_item.batch_no: ", return_item.batch_no);
 
             if (!return_item) {
               evntBus.$emit("show_mesage", {
@@ -2754,6 +2784,7 @@ export default {
       evntBus.$emit("update_customer_price_list", price_list);
     },
     update_discount_umount() {
+      //console.log("Lable-D");
       const value = flt(this.additional_discount_percentage);
       if (value >= -100 && value <= 100) {
         this.discount_amount = (this.Total * value) / 100;
@@ -2873,6 +2904,8 @@ export default {
     },
 
     set_batch_qty(item, value, update = true) {
+      if (this.invoice_doc.is_return)
+        return; // batch data for a return invoice should be identical to it's corresponding return_doc
       const existing_items = this.items.filter(
         (element) =>
           element.item_code == item.item_code &&
@@ -2899,8 +2932,10 @@ export default {
       // 2. if batch has no expiry_date we should use the batch with the earliest manufacturing_date
       // 3. we should not use batch with remaining_qty = 0
       // 4. we should the highest remaining_qty
-      let batch_no_data;
-      if (this.invoice_doc.is_return) { // in case of returns, also pass the batches with qty '0'
+
+      let batch_no_data = "";
+
+      /* if (this.invoice_doc.is_return) { // in case of returns, also pass the batches with qty '0'
         console.log("(if) this.invoice_doc.is_return: ", this.invoice_doc.is_return);
         batch_no_data = Object.values(used_batches)
           //.filter((batch) => batch.remaining_qty > 0)
@@ -2924,28 +2959,29 @@ export default {
           });
       }
       else {
-        console.log("(Else) this.invoice_doc.is_return: ", this.invoice_doc.is_return);
-        batch_no_data = Object.values(used_batches)
-          .filter((batch) => batch.remaining_qty > 0)
-          .sort((a, b) => {
-            if (a.expiry_date && b.expiry_date) {
-              return a.expiry_date - b.expiry_date;
-            } else if (a.expiry_date) {
-              return -1;
-            } else if (b.expiry_date) {
-              return 1;
-            } else if (a.manufacturing_date && b.manufacturing_date) {
-              return a.manufacturing_date - b.manufacturing_date;
-            } else if (a.manufacturing_date) {
-              return -1;
-            } else if (b.manufacturing_date) {
-              return 1;
-            } else {
-              return a.remaining_qty - b.remaining_qty;
-              //return b.remaining_qty - a.remaining_qty;
-            }
-          });
-      }
+        console.log("(Else) this.invoice_doc.is_return: ", this.invoice_doc.is_return); */
+
+      batch_no_data = Object.values(used_batches)
+        .filter((batch) => batch.remaining_qty > 0)
+        .sort((a, b) => {
+          if (a.expiry_date && b.expiry_date) {
+            return a.expiry_date - b.expiry_date;
+          } else if (a.expiry_date) {
+            return -1;
+          } else if (b.expiry_date) {
+            return 1;
+          } else if (a.manufacturing_date && b.manufacturing_date) {
+            return a.manufacturing_date - b.manufacturing_date;
+          } else if (a.manufacturing_date) {
+            return -1;
+          } else if (b.manufacturing_date) {
+            return 1;
+          } else {
+            return a.remaining_qty - b.remaining_qty;
+            //return b.remaining_qty - a.remaining_qty;
+          }
+        });
+      //}
       if (batch_no_data.length > 0) {
         let batch_to_use = null;
         if (value) {
@@ -3884,8 +3920,8 @@ export default {
           this.pending_fs_bills_check(customer);
         }
       }
-      if (customer && this.pos_profile.posa_allow_sales_order && frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center')
-        this.get_customer_type(customer); // for setting "Sales Orders" for B2B customers, with customer_type as "company"
+      //if (customer && this.pos_profile.posa_allow_sales_order && frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center')
+      //  this.get_customer_type(customer); // for setting "Sales Orders" for B2B customers, with customer_type as "company"
     });
     evntBus.$on("reset_fs_variables", () => {
       this.reset_fs_variables();
@@ -3950,11 +3986,18 @@ export default {
       });
     });
     evntBus.$on("load_return_invoice", (data) => {
+      //console.log("data.return_doc.discount_amount: ", data.return_doc.discount_amount);
+      //console.log("data.return_doc.additional_discount_percentage: ", data.return_doc.additional_discount_percentage);
       this.new_invoice(data.invoice_doc);
-      this.discount_amount = -data.return_doc.discount_amount;
+      if (data.return_doc.discount_amount > 0)
+        this.discount_amount = -(data.return_doc.total - data.return_doc.discount_amount);
+      else
+        this.discount_amount = 0;
       this.additional_discount_percentage =
         -data.return_doc.additional_discount_percentage;
       this.return_doc = data.return_doc;
+      //console.log("this.return_doc.additional_discount_percentage: ", this.return_doc.additional_discount_percentage)
+      //console.log("this.discount_amount: ", this.discount_amount);
     });
     evntBus.$on("set_new_line", (data) => {
       this.new_line = data;
@@ -4012,6 +4055,8 @@ export default {
       evntBus.$emit("set_customer", this.customer);
       this.fetch_customer_details();
       this.set_delivery_charges();
+      if (this.customer && (this.pos_profile.company == "Auroville Bakery" || this.pos_profile.company == "AV Bakery Cafe"))
+        this.verify_fs_discount();
     },
     customer_info() {
       evntBus.$emit("set_customer_info_to_edit", this.customer_info);
@@ -4038,11 +4083,17 @@ export default {
       evntBus.$emit("update_invoice_type", this.invoiceType);
     },
     discount_amount() {
+      //console.log("this.invoice_doc.is_return: ", this.invoice_doc.is_return);
       if (!this.discount_amount || this.discount_amount == 0) {
         this.additional_discount_percentage = 0;
-      } else if (this.pos_profile.posa_use_percentage_discount) {
-        this.additional_discount_percentage =
-          (this.discount_amount / this.Total) * 100;
+      }
+      else if (this.pos_profile.posa_use_percentage_discount) {
+        //console.log("this.discount_amount: ", this.discount_amount);
+        if (this.invoice_doc.is_return)
+          this.additional_discount_percentage = this.return_doc.additional_discount_percentage
+        else
+          this.additional_discount_percentage = (this.discount_amount / this.Total) * 100;
+        console.log("this.additional_discount_percentage: ", this.additional_discount_percentage);
       } else {
         this.additional_discount_percentage = 0;
       }
