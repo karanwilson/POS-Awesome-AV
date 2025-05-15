@@ -606,9 +606,9 @@ def update_invoice(data, container_return=None):
         if len(invoice_doc.payments) == 0:
             invoice_doc.payments = ref_doc.payments
 
-        if invoice_doc.grand_total != 0:
+        if flt(invoice_doc.grand_total) != 0:
             invoice_doc.paid_amount = invoice_doc.grand_total
-        elif invoice_doc.total != 0:
+        elif flt(invoice_doc.total) != 0:
             invoice_doc.paid_amount = invoice_doc.total
         else:
             invoice_doc.paid_amount = invoice_doc.rounded_total
@@ -622,9 +622,9 @@ def update_invoice(data, container_return=None):
 
     elif invoice_doc.is_return and container_return:
         invoice_doc.update_stock = 1
-        if invoice_doc.grand_total != 0:
+        if flt(invoice_doc.grand_total) != 0:
             invoice_doc.paid_amount = invoice_doc.grand_total
-        elif invoice_doc.total != 0:
+        elif flt(invoice_doc.total) != 0:
             invoice_doc.paid_amount = invoice_doc.total
         else:
             invoice_doc.paid_amount = invoice_doc.rounded_total
