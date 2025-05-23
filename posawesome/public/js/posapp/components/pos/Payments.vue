@@ -1108,7 +1108,8 @@ export default {
         data["invoiceType"] = this.invoiceType;
         data["remarks"] = this.order_remarks_text;
 
-        if (totalPayedAmount === 0 && this.redeemed_customer_credit === 0) {
+        //console.log("this.pos_profile.posa_allow_credit_sale: ", this.pos_profile.posa_allow_credit_sale);
+        if (totalPayedAmount === 0 && this.redeemed_customer_credit === 0 && this.is_credit_sale === 0) {
           evntBus.$emit("show_mesage", {
             text: "Please set a Mode of Payment",
             color: "error",
@@ -2093,7 +2094,8 @@ export default {
     },
     //configuring is_credit_sale in case there is a "Pending Amount" in Invoice.
     diff_payment(value) {
-      if (value > 0 && this.invoiceType == "Invoice") this.is_credit_sale = 1;
+      if (value > 0 && this.invoiceType == "Invoice" && this.pos_profile.company == "Pour Tous Distribution Center")
+        this.is_credit_sale = 1;
       if (value == 0) this.is_credit_sale = 0;
     },
     is_cashback(value){
