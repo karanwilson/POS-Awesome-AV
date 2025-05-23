@@ -1108,81 +1108,90 @@ export default {
         data["invoiceType"] = this.invoiceType;
         data["remarks"] = this.order_remarks_text;
 
-        const vm = this;
-        frappe.call({
-          method: "posawesome.posawesome.api.posapp.submit_invoice",
-          args: {
-            data: data,
-            invoice: this.invoice_doc,
-          },
-          async: false, // making this call synchronous, to wait for the Invoice Submit status, before the flow resumes.
-          // removing async await from the callback below, as now the "Sales Order" name is being stored for the prints,
-          // hence we no longer need to wait for the print before the "Sales Order" draft Invoice is deleted
-          //callback: async function (r) {
-          callback: function (r) {
-            //if ((r.message.status == 1) && !r.message.error) {
-            if (r.message.status == 1) {
-              if (r.message.error) {
-                evntBus.$emit("show_mesage", {
-                  text: r.message.error,
-                  color: "warning",
-                });
-              }
-              if (print) {
-                if (r.message.doctype == "Sales Order")
-                  vm.sales_order = r.message.name;
-                //const print_open = await vm.load_print_page();
-                const print_open = vm.load_print_page();
-                console.log("print_open: ", print_open);
-              }
-              if (r.message.doctype == "Sales Invoice") {
-                evntBus.$emit("set_last_invoice", vm.invoice_doc.name);
-                evntBus.$emit("show_mesage", {
-                  text: `Invoice ${r.message.name} is Submited`,
-                  color: "success",
-                });
-              }
-              else {
-                evntBus.$emit("show_mesage", {
-                  text: `Sales Order ${r.message.name} is Submited`,
-                  color: "info",
-                });
-                if (r.message.invoice) {
-                  // delete the invoice draft
-                  frappe.call('posawesome.posawesome.api.posapp.delete_sales_invoice', {
-                    sales_invoice: r.message.invoice
+        if (totalPayedAmount === 0 && this.redeemed_customer_credit === 0) {
+          evntBus.$emit("show_mesage", {
+            text: "Please set a Mode of Payment",
+            color: "warning",
+          });
+          reject("Mode of Payment not set");
+        }
+        else {
+          const vm = this;
+          frappe.call({
+            method: "posawesome.posawesome.api.posapp.submit_invoice",
+            args: {
+              data: data,
+              invoice: this.invoice_doc,
+            },
+            async: false, // making this call synchronous, to wait for the Invoice Submit status, before the flow resumes.
+            // removing async await from the callback below, as now the "Sales Order" name is being stored for the prints,
+            // hence we no longer need to wait for the print before the "Sales Order" draft Invoice is deleted
+            //callback: async function (r) {
+            callback: function (r) {
+              //if ((r.message.status == 1) && !r.message.error) {
+              if (r.message.status == 1) {
+                if (r.message.error) {
+                  evntBus.$emit("show_mesage", {
+                    text: r.message.error,
+                    color: "warning",
                   });
                 }
-              }
-              frappe.utils.play_sound("submit");
-              this.addresses = [];
-              resolve("Submitted");
-            }
-            else {
-              // Document not Submitted
-              if (r.message.error) {
-                evntBus.$emit("show_mesage", {
-                  text: r.message.error,
-                  color: "error",
-                });
-              }
-              if (r.message.doctype == "Sales Invoice") {
-                evntBus.$emit("set_last_invoice", vm.invoice_doc.name);
-                evntBus.$emit("show_mesage", {
-                  text: `Invoice ${r.message.name} not Submited, please check batch/stock and retry`,
-                  color: "error",
-                });
+                if (print) {
+                  if (r.message.doctype == "Sales Order")
+                    vm.sales_order = r.message.name;
+                  //const print_open = await vm.load_print_page();
+                  const print_open = vm.load_print_page();
+                  console.log("print_open: ", print_open);
+                }
+                if (r.message.doctype == "Sales Invoice") {
+                  evntBus.$emit("set_last_invoice", vm.invoice_doc.name);
+                  evntBus.$emit("show_mesage", {
+                    text: `Invoice ${r.message.name} is Submited`,
+                    color: "success",
+                  });
+                }
+                else {
+                  evntBus.$emit("show_mesage", {
+                    text: `Sales Order ${r.message.name} is Submited`,
+                    color: "info",
+                  });
+                  if (r.message.invoice) {
+                    // delete the invoice draft
+                    frappe.call('posawesome.posawesome.api.posapp.delete_sales_invoice', {
+                      sales_invoice: r.message.invoice
+                    });
+                  }
+                }
+                frappe.utils.play_sound("submit");
+                this.addresses = [];
+                resolve("Submitted");
               }
               else {
-                evntBus.$emit("show_mesage", {
-                  text: `Sales Order ${r.message.name} not Submited, please retry`,
-                  color: "error",
-                });
+                // Document not Submitted
+                if (r.message.error) {
+                  evntBus.$emit("show_mesage", {
+                    text: r.message.error,
+                    color: "error",
+                  });
+                }
+                if (r.message.doctype == "Sales Invoice") {
+                  evntBus.$emit("set_last_invoice", vm.invoice_doc.name);
+                  evntBus.$emit("show_mesage", {
+                    text: `Invoice ${r.message.name} not Submited, please check batch/stock and retry`,
+                    color: "error",
+                  });
+                }
+                else {
+                  evntBus.$emit("show_mesage", {
+                    text: `Sales Order ${r.message.name} not Submited, please retry`,
+                    color: "error",
+                  });
+                }
+                reject("Not Submitted");
               }
-              reject("Not Submitted");
-            }
-          },
-        });
+            },
+          });
+        }
       })
     },
     set_full_amount(idx) {
