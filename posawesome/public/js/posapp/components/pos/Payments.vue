@@ -1111,7 +1111,7 @@ export default {
         if (totalPayedAmount === 0 && this.redeemed_customer_credit === 0) {
           evntBus.$emit("show_mesage", {
             text: "Please set a Mode of Payment",
-            color: "warning",
+            color: "error",
           });
           reject("Mode of Payment not set");
         }

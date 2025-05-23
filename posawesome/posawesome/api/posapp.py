@@ -1256,13 +1256,24 @@ def get_customer_group(customer):
 
 @frappe.whitelist()
 def pending_fs_bills_query(customer, company):
+    query = frappe.db.sql(
+		"""
+		SELECT name	FROM `tabSales Invoice`
+		WHERE docstatus = 1 AND customer = '{0}'
+        AND outstanding_amount > 0 AND status IN
+		("Unpaid", "Unpaid and Discounted", "Partly Paid", "Partly Paid and Discounted", "Overdue", "Overdue and Discounted")
+		""".format(customer, company),
+		as_dict=True
+		#AND custom_fs_transfer_status = "Insufficient Funds"
+	)
+    return len(query)
     #customer_name = frappe.get_value("Customer", customer, "customer_name")
-    outstanding_invoices = get_outstanding_invoices(
+    """ outstanding_invoices = get_outstanding_invoices(
         party_type="Customer",
         party=customer,
         account=get_party_account("Customer", customer, company),
     )
-    return len(outstanding_invoices)
+    return len(outstanding_invoices) """
 
 @frappe.whitelist()
 def open_pending_fs_bills(customer, company):
