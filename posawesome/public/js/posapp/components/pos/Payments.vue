@@ -1109,7 +1109,7 @@ export default {
         data["remarks"] = this.order_remarks_text;
 
         //console.log("this.pos_profile.posa_allow_credit_sale: ", this.pos_profile.posa_allow_credit_sale);
-        if (totalPayedAmount === 0 && this.redeemed_customer_credit === 0 && this.is_credit_sale === 0) {
+        if (totalPayedAmount == 0 && this.redeemed_customer_credit == 0 && this.is_credit_sale == 0) {
           evntBus.$emit("show_mesage", {
             text: "Please set a Mode of Payment",
             color: "error",
