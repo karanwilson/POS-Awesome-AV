@@ -574,6 +574,10 @@ def update_invoice(data, container_return=None):
     allow_zero_rated_items = frappe.get_cached_value(
         "POS Profile", invoice_doc.pos_profile, "posa_allow_zero_rated_items"
     )
+    taxable = True
+    if frappe.db.get_value("Company", invoice_doc.company, "gstin"):
+        if frappe.db.get_value("Customer", invoice_doc.customer, "gstin") == frappe.db.get_value("Company", invoice_doc.company, "gstin"):
+            taxable = False
     for item in invoice_doc.items:
         if not item.rate or item.rate == 0:
             if allow_zero_rated_items:
@@ -585,16 +589,18 @@ def update_invoice(data, container_return=None):
                 )
         else:
             item.is_free_item = 0
-        add_taxes_from_tax_template(item, invoice_doc)
+        if taxable:
+            add_taxes_from_tax_template(item, invoice_doc)
         #frappe.throw("Item: {0}, invoice_doc: {1}".format(str(item.as_dict()), str(invoice_doc.as_dict())))
 
-    if frappe.get_cached_value(
-        "POS Profile", invoice_doc.pos_profile, "posa_tax_inclusive"
-    ):
-        if invoice_doc.get("taxes"):
-            for tax in invoice_doc.taxes:
-                tax.included_in_print_rate = 1
-                #frappe.throw(str(tax.as_dict()))
+    if taxable:
+        if frappe.get_cached_value(
+            "POS Profile", invoice_doc.pos_profile, "posa_tax_inclusive"
+        ):
+            if invoice_doc.get("taxes"):
+                for tax in invoice_doc.taxes:
+                    tax.included_in_print_rate = 1
+                    #frappe.throw(str(tax.as_dict()))
 
     # moving the returns code block after the tax template is added, for tax calculations
     if invoice_doc.is_return and invoice_doc.return_against:
@@ -718,7 +724,12 @@ def add_advance_sales_order_items(new_sales_order, t_warehouse, invoice):
                 #"custom_batch_no": item.get("batch_no"),
 			},
 		)
-        add_taxes_from_tax_template(item, new_sales_order)
+        taxable = True
+        if frappe.db.get_value("Company", invoice.get("company"), "gstin"):
+            if frappe.db.get_value("Customer", invoice.get("customer"), "gstin") == frappe.db.get_value("Company", invoice.get("company"), "gstin"):
+                taxable = False
+        if taxable:        
+            add_taxes_from_tax_template(item, new_sales_order)
 
 """ def add_advance_sales_order_taxes(new_sales_order, invoice):
     for tax_row in invoice.get("taxes"):
