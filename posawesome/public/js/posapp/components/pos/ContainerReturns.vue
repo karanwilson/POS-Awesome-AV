@@ -236,6 +236,7 @@ export default {
         invoice_doc.return_against = "";
         //invoice_doc.container_return = 1; // needed at posapp.py update_invoice as return_against is not set for container returns
         evntBus.$emit('container_return', true);
+        //console.log("evntBus.$emit('container_return', true)");
         //console.log('invoice_doc: ', invoice_doc);
         if (this.customer) {
           invoice_doc.customer = this.customer.name;
