@@ -1345,47 +1345,54 @@ export default {
     },
     */
     get_available_credit(e) {
-      this.clear_all_amounts();
-      if (e) {
-        frappe
-          .call("posawesome.posawesome.api.posapp.get_available_credit", {
-            customer: this.invoice_doc.customer,
-            company: this.pos_profile.company,
-          })
-          .then((r) => {
-            const data = r.message;   // receives both 'outstanding invoices' (if any) and 'advance payments' (if any)
-            if (data.length) {
-              const amount =
-                this.invoice_doc.rounded_total || this.invoice_doc.grand_total;
-              let remainAmount = amount;
+      return new Promise((resolve, reject) => {
+        this.clear_all_amounts();
+        if (e) {
+          const vm = this;
+          frappe.call({
+            method: "posawesome.posawesome.api.posapp.get_available_credit",
+            args: {
+              customer: this.invoice_doc.customer,
+              company: this.pos_profile.company,              
+            },
+            async: false,
+            callback: function (r) {
+              const data = r.message;   // receives both 'outstanding invoices' (if any) and 'advance payments' (if any)
 
-              data.forEach((row) => {
-                if (remainAmount > 0) {
-                  if (remainAmount >= row.total_credit) {
-                    row.credit_to_redeem = row.total_credit;
-                    // here in case the row.total_credit is an 'outstanding amount',
-                    // then it will add on to the remainAmount in the below statement, because (-) * (-) = (+)
-                    remainAmount = remainAmount - row.total_credit;
+              let remainAmount = vm.invoice_doc.rounded_total || vm.invoice_doc.grand_total;
+
+              if (data.length) {
+                data.forEach((row) => {
+                  if (remainAmount > 0) {
+                    if (remainAmount >= row.total_credit) {
+                      row.credit_to_redeem = row.total_credit;
+                      // here in case the row.total_credit is an 'outstanding amount',
+                      // then it will add on to the remainAmount in the below statement, because (-) * (-) = (+)
+                      remainAmount = remainAmount - row.total_credit;
+                    } else {
+                      row.credit_to_redeem = flt(remainAmount, vm.float_precision);
+                      remainAmount = 0;
+                    }
                   } else {
-                    row.credit_to_redeem = flt(remainAmount, this.float_precision);
-                    remainAmount = 0;
+                    row.credit_to_redeem = 0;
                   }
-                } else {
-                  row.credit_to_redeem = 0;
-                }
-              });
+                });
 
-              this.customer_credit_dict = data;
-              this.redeem_customer_credit = true;
-              // the below function call is commented because it is now redundant in this POSA version (check the comments with the function definition above)
-              // this.customer_credit_redemption();
-            } else {
-              this.customer_credit_dict = [];
+                vm.customer_credit_dict = data;
+                vm.redeem_customer_credit = true;
+                // the below function call is commented because it is now redundant in this POSA version (check the comments with the function definition above)
+                // vm.customer_credit_redemption();
+              } else {
+                vm.customer_credit_dict = [];
+              }
             }
-          });
-      } else {
-        this.customer_credit_dict = [];
-      }
+          })
+        } else {
+          this.customer_credit_dict = [];
+        }
+        resolve(this.available_customer_credit);
+      })
+
     },
     /*
     set_last_day_of_Month() {
@@ -1889,7 +1896,7 @@ export default {
 
   mounted: function () {
     this.$nextTick(function () {
-      evntBus.$on("send_invoice_doc_payment", (invoice_doc) => {
+      evntBus.$on("send_invoice_doc_payment", async (invoice_doc) => {
         this.invoice_doc = invoice_doc;
 
         if (frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') {
@@ -1920,49 +1927,52 @@ export default {
         else {
           let default_payment = "";
 
-          if (this.customer_group == "Aurocard Payments") {
-            default_payment = this.invoice_doc.payments.find(
-              (payment) => payment.mode_of_payment == "Aurocard"
-            );
-            this.aurocard = true;
-          }
+          //if (!this.pos_profile.posa_enable_fs_payments)
+          const available_customer_credit = await this.get_available_credit(1); // pre-loads customer credit in payments screen
+          //console.log("available_customer_credit: ", available_customer_credit);
+          //else this.redeem_customer_credit = false; // resets to false incase it was switched-on before pressing 'cancel payment'
 
-          else if (this.customer_group == "UPI Payments") {
-            default_payment = this.invoice_doc.payments.find(
-              (payment) => payment.mode_of_payment == "UPI"
-            );
-            this.upi = true;
-          }
+          if (frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') {
+            if (this.invoice_doc.grand_total > available_customer_credit) {
+              if (this.customer_group == "Aurocard Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Aurocard"
+                );
+                this.aurocard = true;
+              }
 
-          else if (this.customer_group == "Credit Card Payments") {
-            default_payment = this.invoice_doc.payments.find(
-              (payment) => payment.mode_of_payment == "Credit Card"
-            );
-          }
+              else if (this.customer_group == "UPI Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "UPI"
+                );
+                this.upi = true;
+              }
 
-          else if (this.customer_group == "Debit Card Payments") {
-            default_payment = this.invoice_doc.payments.find(
-              (payment) => payment.mode_of_payment == "Debit Card"
-            );
-          }
+              else if (this.customer_group == "Card Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Cards"
+                );
+              }
 
-          else if (this.customer_group == "Cash") {
-            default_payment = this.invoice_doc.payments.find(
-              (payment) => payment.mode_of_payment == "Cash"
-            );
-          }
+              else if (this.customer_group == "Cash") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Cash"
+                );
+              }
 
-          else {
-            default_payment = this.invoice_doc.payments.find(
-              (payment) => payment.default == 1
-            );
-          }
+              else {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.default == 1
+                );
+              }
+            }
+            }
 
           if (default_payment && !invoice_doc.is_return) {
             default_payment.amount = this.flt(
               invoice_doc.rounded_total || invoice_doc.grand_total,
               this.currency_precision
-            );
+            ) - this.redeemed_customer_credit;
           }
 
           if (invoice_doc.is_return) {
@@ -1991,11 +2001,6 @@ export default {
           this.is_cashback = false;
 
         this.loyalty_amount = 0;
-        if (!this.pos_profile.posa_enable_fs_payments)
-          this.get_available_credit(1); // pre-loads customer credit in payments screen
-        else this.redeem_customer_credit = false; // resets to false incase it was switched-on before pressing 'cancel payment'
-        //this.set_last_day_of_Month(); // setting the due_date for is_credit_sale (if set) to last day of the month
-        this.invoice_doc.due_date = frappe.datetime.month_end(); // setting the due_date for is_credit_sale (if set) to last day of the month
         this.get_addresses();
         this.get_sales_person_names();
       });
@@ -2113,6 +2118,8 @@ export default {
           payment.amount = 0;
           payment.base_amount = 0;
           //this.$refs.submit_payments.$el.focus();
+          //this.set_last_day_of_Month(); // setting the due_date for is_credit_sale (if set) to last day of the month
+          this.invoice_doc.due_date = frappe.datetime.month_end(); // setting the due_date for is_credit_sale (if set) to last day of the month
         });
       }
     },
