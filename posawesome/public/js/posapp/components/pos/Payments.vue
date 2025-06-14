@@ -1934,7 +1934,7 @@ export default {
           //else this.redeem_customer_credit = false; // resets to false incase it was switched-on before pressing 'cancel payment'
 
           if (frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') {
-            if (this.invoice_doc.grand_total > available_customer_credit) {
+            if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
               if (this.customer_group == "Aurocard Payments") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "Aurocard"
@@ -1967,9 +1967,11 @@ export default {
                 );
               }
             }
-            }
+          }
 
-          if (default_payment && !invoice_doc.is_return) {
+          // In case of PTDC the vairable "default_payment" below is not set
+          //if (default_payment && !invoice_doc.is_return) {
+          if (default_payment) {
             default_payment.amount = this.flt(
               invoice_doc.rounded_total || invoice_doc.grand_total,
               this.currency_precision
@@ -1978,6 +1980,11 @@ export default {
 
           if (invoice_doc.is_return) {
             this.is_return = true;
+            if ((frappe.defaults.get_user_default("company") == 'Pour Tous Distribution Center') || default_payment.mode_of_payment != 'FS') {
+              this.is_cashback = false;
+              this.aurocard = false;
+              this.upi = false;
+            }
             // commenting out the below statements to enable returns to the default mode of payment
             /* invoice_doc.payments.forEach((payment) => {
               payment.amount = 0;
@@ -1998,8 +2005,8 @@ export default {
         this.is_write_off_change = 0;
 
         // In case of PTDC (with FS payments disabled), is_cashback is disabled in order to create credit-notes
-        if (!this.pos_profile.posa_enable_fs_payments && this.invoice_doc.is_return)
-          this.is_cashback = false;
+        //if ((frappe.defaults.get_user_default("company") == 'Pour Tous Distribution Center') && this.invoice_doc.is_return)
+        //  this.is_cashback = false;
 
         this.loyalty_amount = 0;
         this.get_addresses();

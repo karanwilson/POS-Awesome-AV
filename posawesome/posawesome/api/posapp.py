@@ -1147,7 +1147,6 @@ def get_available_credit(customer, company):
             "outstanding_amount": ["<", 0],
             "docstatus": 1,
             "is_return": 0,
-            "is_return": 1,
             "customer": customer,
             "company": company,
         },
