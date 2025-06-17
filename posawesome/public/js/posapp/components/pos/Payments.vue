@@ -1644,8 +1644,15 @@ export default {
             this.invoice_doc.remarks += "\n" + "UPI Transaction ID: " + this.upi_trans_id;
           else
             this.invoice_doc.remarks = "UPI Transaction ID: " + this.upi_trans_id;
+          resolve("OK");
         }
-        resolve("OK");
+        else {
+          evntBus.$emit("show_mesage", {
+            text: "For UPI Payments, please enter the 'UPI Transaction ID' OR enter remarks (eg.: Not Shared)",
+            color: "warning",
+          });
+          reject("For UPI Payments, please enter the 'UPI Transaction ID' OR enter remarks (eg.: Not Shared)");
+        }
       })
     },
 
