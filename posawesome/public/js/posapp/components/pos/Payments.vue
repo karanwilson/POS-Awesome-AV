@@ -1962,7 +1962,7 @@ export default {
                 );
               }
 
-              else if (this.customer_group == "Cash") {
+              else if (this.customer_group == "Cash Payments") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "Cash"
                 );
