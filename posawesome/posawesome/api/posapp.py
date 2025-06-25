@@ -661,7 +661,7 @@ def update_invoice(data, container_return=None):
 
 
 @frappe.whitelist()
-def create_advance_sales_order(invoice, remarks):
+def create_advance_sales_order(invoice, remarks, is_donation):
     # get company abbreviation
     abbr = frappe.get_value("Company", frappe.defaults.get_user_default("company"), 'abbr')
     if abbr == "PTPS":
@@ -683,6 +683,7 @@ def create_advance_sales_order(invoice, remarks):
     new_sales_order.custom_posting_time = invoice.get("posting_time")
     new_sales_order.company = invoice.get("company")
     new_sales_order.custom_remarks = remarks
+    new_sales_order.custom_is_donation = is_donation
 
     add_advance_sales_order_items(new_sales_order, t_warehouse, invoice)
     #add_advance_sales_order_taxes(new_sales_order, invoice)
@@ -859,7 +860,7 @@ def submit_invoice(invoice, data):
         return create_advance_sales_order(invoice, data.get("remarks")) """
 
     if data.get("invoiceType") == "Order":
-        return create_advance_sales_order(invoice, data.get("remarks"))
+        return create_advance_sales_order(invoice, data.get("remarks"), data.get("is_donation"))
 
     invoice_doc = frappe.get_doc("Sales Invoice", invoice.get("name"))
     invoice_doc.update(invoice)

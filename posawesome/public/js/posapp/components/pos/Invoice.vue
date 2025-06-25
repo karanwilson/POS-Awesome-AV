@@ -896,8 +896,8 @@
                 block
                 class="pa-0"
                 color="accent"
-                @click="print_draft_invoice"
                 dark
+                @click="new_invoice"
                 >{{ __("Hold Bill") }}</v-btn
               >
             </v-col>
@@ -3058,12 +3058,12 @@ export default {
       }
     },
 
-    shortSaveAsOrder(e) {
+    /* shortSaveAsOrder(e) {
       if (e.key === "F4") {
         e.preventDefault();
         this.save_as_order();
       }
-    },
+    }, */
 
     shortDeleteFirstItem(e) {
       if (e.key === "d" && (e.ctrlKey || e.metaKey)) {

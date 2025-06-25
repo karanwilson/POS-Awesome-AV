@@ -624,6 +624,17 @@
               @change="get_available_credit($event)"
             ></v-switch>
           </v-col>
+          <v-col
+            cols="6"
+            v-if="pos_profile.posa_allow_sales_order && invoiceType == 'Order'"
+          >
+            <v-switch
+              v-model="is_donation"
+              flat
+              :label="frappe._('Is Donation')"
+              class="my-0 py-0"
+            ></v-switch>
+          </v-col>
         </v-row>
         <div
           v-if="
@@ -883,6 +894,7 @@ export default {
     order_remarks_text: "", // for Sales Order remarks
     balance_available: null, // Customer FS Account balance
     fs_offline: false, // for offline credit billing
+    is_donation: 0, // for marking donations in Sales Order
     customer_credit_dict: [],
     phone_dialog: false,
     invoiceType: "Invoice",
@@ -908,6 +920,7 @@ export default {
       this.invoiceType = "Invoice";
       this.aurocard = false; // toggle for display of Aurocard details
       this.upi = false; // toggle for display of UPI details
+      this.is_donation = 0;
     },
     async submit(event, payment_received = false, print = false) {
       if (this.invoiceType == "Invoice") {
@@ -1107,6 +1120,7 @@ export default {
         data["is_cashback"] = this.is_cashback;
         data["invoiceType"] = this.invoiceType;
         data["remarks"] = this.order_remarks_text;
+        data["is_donation"] = this.is_donation;
 
         //console.log("this.pos_profile.posa_allow_credit_sale: ", this.pos_profile.posa_allow_credit_sale);
         if ((frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') &&
@@ -1311,6 +1325,20 @@ export default {
             this.submit(undefined, false, false); // at PTDC 'Print' is set'to false (3rd argument)
           else
             this.submit(undefined, false, true);
+        }
+      }
+      else if (e.key === "F4") {
+        e.preventDefault();
+        if (this.payment) { // only allow this shortcut to run once the "Show Payments" screen is open (via EvntBus Event)
+          if (this.invoiceType == "Order" && !this.invoice_doc.posa_delivery_date) {
+            evntBus.$emit('show_mesage', {
+              text: "Please set the Delivery Date",
+              color: "warning",
+            });
+            return;
+          }
+          else
+            this.submit(undefined, false, false);
         }
       }
     },
@@ -1627,12 +1655,16 @@ export default {
             this.invoice_doc.remarks = "Aurocard POS ID: " + "PTPS POS " + this.aurocard_pos_id + "\n" + "Aurocard Transaction ID: " + this.aurocard_trans_id;
           resolve("OK");
         }
-        else {
+        else if (this.pos_profile.company == "Pour Tous Purchasing Service") {
           evntBus.$emit("show_mesage", {
             text: "For Aurocard Payments, please enter both 'Aurocard POS ID' and 'Aurocard Transaction ID'",
             color: "warning",
           });
           reject("For Aurocard Payments, please enter both 'Aurocard POS ID' and 'Aurocard Transaction ID'");
+        }
+        else {
+          this.invoice_doc.remarks = "Aurocard Transaction ID: " + this.aurocard_trans_id;
+          resolve("OK");
         }
       })
     },
@@ -1646,13 +1678,14 @@ export default {
             this.invoice_doc.remarks = "UPI Transaction ID: " + this.upi_trans_id;
           resolve("OK");
         }
-        else {
+        else if (this.pos_profile.company == "Pour Tous Purchasing Service") {
           evntBus.$emit("show_mesage", {
             text: "For UPI Payments, please enter the 'UPI Transaction ID' OR enter remarks (eg.: Not Shared)",
             color: "warning",
           });
           reject("For UPI Payments, please enter the 'UPI Transaction ID' OR enter remarks (eg.: Not Shared)");
         }
+        else resolve("OK");
       })
     },
 
@@ -1965,6 +1998,12 @@ export default {
               else if (this.customer_group == "Cash Payments") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "Cash"
+                );
+              }
+
+              else if (this.customer_group == "NEFT Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "NEFT"
                 );
               }
 
