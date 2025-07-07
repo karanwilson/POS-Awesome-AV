@@ -743,7 +743,7 @@
         </template>
       </div>
     </v-card>
-    <v-card v-if="pos_profile.posa_enable_fs_payments"
+    <v-card v-if="pos_profile.posa_enable_fs_payments && pos_profile.company != 'AV Bakery Cafe'"
       class="cards mb-0 mt-3 py-0 grey lighten-5">
       <v-row no-gutters>
         <v-col cols="5">
@@ -955,7 +955,7 @@
                 @click="pay_checkout"
                 ref="checkout"
                 dark
-                >{{ __("PAY / Create S.O") }}</v-btn
+                >{{ __("PAY") }}</v-btn
               >
             </v-col>
             <!-- <v-col
@@ -989,6 +989,203 @@
         </v-col>
       </v-row>
     </v-card>
+
+    <v-card v-if="pos_profile.posa_enable_fs_payments && pos_profile.company == 'AV Bakery Cafe'"
+      class="cards mb-0 mt-3 py-0 grey lighten-5">
+      <v-row no-gutters>
+        <v-col cols="5">
+          <v-row no-gutters class="pa-1 pt-9 pr-1">
+            <v-col cols="6" class="pa-1">
+              <v-text-field
+                :value="formtFloat(total_qty)"
+                :label="frappe._('Total Qty')"
+                outlined
+                dense
+                readonly
+                hide-details
+                color="accent"
+              ></v-text-field>
+            </v-col>
+            <v-col
+              v-if="!pos_profile.posa_use_percentage_discount"
+              cols="6"
+              class="pa-1"
+            >
+              <v-text-field
+                :value="formtCurrency(discount_amount)"
+                @change="
+                  setFormatedCurrency(
+                    discount_amount,
+                    'discount_amount',
+                    null,
+                    false,
+                    $event
+                  )
+                "
+                :rules="[isNumber]"
+                :label="frappe._('Additional Discount')"
+                ref="discount"
+                outlined
+                dense
+                hide-details
+                color="warning"
+                :prefix="currencySymbol(pos_profile.currency)"
+                :disabled="
+                  !pos_profile.posa_allow_user_to_edit_additional_discount ||
+                  discount_percentage_offer_name
+                    ? true
+                    : false
+                "
+              ></v-text-field>
+            </v-col>
+            <v-col
+              v-if="pos_profile.posa_use_percentage_discount"
+              cols="6"
+              class="pa-1"
+            >
+              <v-text-field
+                :value="formtFloat(additional_discount_percentage)"
+                @change="
+                  [
+                    setFormatedFloat(
+                      additional_discount_percentage,
+                      'additional_discount_percentage',
+                      null,
+                      false,
+                      $event
+                    ),
+                    update_discount_umount(),
+                  ]
+                "
+                :rules="[isNumber]"
+                :label="frappe._('Additional Discount %')"
+                suffix="%"
+                ref="percentage_discount"
+                outlined
+                dense
+                color="warning"
+                hide-details
+                :disabled="
+                  !pos_profile.posa_allow_user_to_edit_additional_discount ||
+                  discount_percentage_offer_name
+                    ? true
+                    : false
+                "
+              ></v-text-field>
+            </v-col>
+            <v-col cols="6" class="pa-1 mt-2">
+              <v-text-field
+                :value="formtCurrency(total_items_discount_amount)"
+                :prefix="currencySymbol(pos_profile.currency)"
+                :label="frappe._('Items Discounts')"
+                outlined
+                dense
+                color="warning"
+                readonly
+                hide-details
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="6" class="pa-1 mt-2">
+              <v-text-field
+                :value="formtCurrency(subtotal)"
+                :prefix="currencySymbol(pos_profile.currency)"
+                :label="frappe._('Total')"
+                outlined
+                dense
+                readonly
+                hide-details
+                color="success"
+              ></v-text-field>
+              <!--v-text-field
+                :value="formtCurrency_amount(subtotal)"
+                :prefix="currencySymbol(pos_profile.currency)"
+                :label="frappe._('Total')"
+                outlined
+                dense
+                readonly
+                hide-details
+                color="success"
+              ></v-text-field-->
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="7">
+          <v-row no-gutters class="pa-1 pt-2 pl-0">
+            <v-col cols="6" class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                color="warning"
+                dark
+                @click="get_draft_invoices"
+                >{{ __("Held") }}</v-btn
+              >
+            </v-col>
+            <v-col
+              cols="6"
+              class="pa-1"
+            >
+              <v-btn
+                block
+                class="pa-0"
+                color="accent"
+                dark
+                @click="new_invoice"
+                >{{ __("Hold Bill") }}</v-btn
+              >
+            </v-col>
+            <v-col cols="6" class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                color="error"
+                dark
+                @click="cancel_dialog = true"
+                >{{ __("Cancel") }}</v-btn
+              >
+            </v-col>
+            <v-col cols="6" class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                :class="{ 'disable-events': !pos_profile.posa_allow_return }"
+                color="secondary"
+                dark
+                @click="open_returns"
+                >{{ __("Return") }}</v-btn
+              >
+            </v-col>
+            <v-col class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                color="success"
+                @click="pay_checkout"
+                ref="checkout"
+                dark
+                >{{ __("PAY") }}</v-btn
+              >
+            </v-col>
+            <!-- <v-col
+              v-if="pos_profile.posa_allow_print_draft_invoices"
+              cols="6"
+              class="pa-1"
+            >
+              <v-btn
+                block
+                class="pa-0"
+                color="primary"
+                @click="print_draft_invoice"
+                dark
+                >{{ __("Print Draft") }}</v-btn
+              >
+            </v-col> -->
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-card>
+
     <v-card v-if="!pos_profile.posa_enable_fs_payments"
       class="cards mb-0 mt-3 py-0 grey lighten-5">
       <v-row no-gutters>
@@ -1176,7 +1373,7 @@
                 @click="pay_checkout"
                 ref="checkout"
                 dark
-                >{{ __("PAY / Create S.O") }}</v-btn
+                >{{ __("PAY") }}</v-btn
               >
             </v-col>
             <!-- <v-col
@@ -1402,8 +1599,10 @@ export default {
                 evntBus.$emit('balance_available', vm.balance_available);
               }
               else {
+                const display_msg = "Balance Response: " + r.message['Result'] + "; Balance: " + r.message['maxAmount']
                 evntBus.$emit('show_mesage', {
-                  text: 'Please verify the FS Account Number for this Customer',
+                  //text: 'Please verify the FS Account Number for this Customer',
+                  text: display_msg,
                   color: 'error',
                 });
                 vm.new_invoice(); // resets the flow
@@ -2241,8 +2440,8 @@ export default {
         return this.update_invoice(doc);
       }
       //else if (doc.company == 'Pour Tous Distribution Center' && this.invoiceType == "Order")
-      else if (this.invoiceType == "Order")
-        return doc;
+      //else if (this.invoiceType == "Order")
+      //  return doc;
       else {
         return this.update_invoice(doc);
       }

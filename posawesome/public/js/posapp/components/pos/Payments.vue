@@ -378,7 +378,7 @@
                 no-title
                 scrollable
                 color="primary"
-                :min="frappe.datetime.now_date()"
+                :min="frappe.datetime.add_days(frappe.datetime.now_date(true), -7)"
                 @input="order_delivery_date = false"
               >
               </v-date-picker>
