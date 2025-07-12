@@ -1529,7 +1529,7 @@ export default {
   },
 
   methods: {
-    verify_fs_discount() {
+    /* verify_fs_discount() {
       const vm = this;
       frappe.call({
         method: 'posawesome.posawesome.api.posapp.get_customer_group',
@@ -1548,7 +1548,7 @@ export default {
           }
         }
       })
-    },
+    }, */
     fs_offline_switch() {
       this.fs_offline = !this.fs_offline;
       if (this.fs_offline) {
@@ -2897,6 +2897,12 @@ export default {
               // item.batch_no is a dummy parameter here (it was used in previous POSA version, and may be used in other function calls of set_batch_qty)
             }
             if (data.has_pricing_rule) {
+              evntBus.$emit("show_mesage", {
+                text: __(`has_pricing_rule: {0}`, [data.has_pricing_rule]),
+                color: "success",
+              });
+              //console.log("data: ", data);
+              vm.additional_discount_percentage = data.discount_percentage; // discount_percentage is either set, or 0
             } else if (
               vm.pos_profile.posa_apply_customer_discount &&
               vm.customer_info.posa_discount > 0 &&
@@ -4261,8 +4267,8 @@ export default {
       evntBus.$emit("set_customer", this.customer);
       this.fetch_customer_details();
       this.set_delivery_charges();
-      if (this.customer && (this.pos_profile.company == "Auroville Bakery" || this.pos_profile.company == "AV Bakery Cafe"))
-        this.verify_fs_discount();
+      //if (this.customer && (this.pos_profile.company == "Auroville Bakery" || this.pos_profile.company == "AV Bakery Cafe"))
+      //  this.verify_fs_discount();
     },
     customer_info() {
       evntBus.$emit("set_customer_info_to_edit", this.customer_info);
