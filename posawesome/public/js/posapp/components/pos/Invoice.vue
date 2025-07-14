@@ -2416,6 +2416,7 @@ export default {
             }
             else {
               vm.invoice_doc = r.message;
+              //console.log("r.message: ", r.message);
             }
           }
         },
@@ -2902,7 +2903,8 @@ export default {
                 color: "success",
               });
               //console.log("data: ", data);
-              vm.additional_discount_percentage = data.discount_percentage; // discount_percentage is either set, or 0
+              // commenting the below statement, as the discounts are handled/calculated in the backend ERPNext.
+              //vm.additional_discount_percentage = data.discount_percentage; // discount_percentage is either set, or 0
             } else if (
               vm.pos_profile.posa_apply_customer_discount &&
               vm.customer_info.posa_discount > 0 &&
