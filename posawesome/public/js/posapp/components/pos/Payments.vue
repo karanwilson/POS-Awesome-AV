@@ -561,7 +561,7 @@
           </v-col>
           <v-col
             cols="6"
-            v-if="pos_profile.posa_allow_credit_sale && !invoice_doc.is_return"
+            v-if="pos_profile.posa_allow_credit_sale && !invoice_doc.is_return && this.pos_profile.company != 'Pour Tous Purchasing Service'"
           >
             <v-switch
               v-model="is_credit_sale"
@@ -934,6 +934,15 @@ export default {
       if (!this.invoice_doc.is_return && this.total_payments < 0) {
         evntBus.$emit("show_mesage", {
           text: `Payments not correct`,
+          color: "error",
+        });
+        frappe.utils.play_sound("error");
+        return;
+      }
+      // using this logic to dis-allow staff who do not have billing permission at PTPS
+      else if (this.pos_profile.company == "Pour Tous Purchasing Service" && !this.pos_profile.posa_enable_fs_payments) {
+        evntBus.$emit("show_mesage", {
+          text: `POS Profile not enabled for Payments`,
           color: "error",
         });
         frappe.utils.play_sound("error");
