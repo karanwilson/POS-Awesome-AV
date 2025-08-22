@@ -720,7 +720,7 @@
           </v-col>
         </v-row>
         <v-row class="px-1 py-0" align="start" no-gutters>
-          <v-col cols="6" v-if="invoice_doc.is_return || pos_profile.posa_allow_sales_order">
+          <v-col cols="6" v-if="pos_profile.posa_allow_sales_order && invoiceType == 'Order'">
             <v-switch
               v-model="order_remarks"
               flat
