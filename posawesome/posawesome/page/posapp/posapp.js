@@ -28,7 +28,7 @@ frappe
 					"Invoice": "Checkout-Note",
 					"Invoice ID *": "Checkout-Note ID *",
 					"There is no Customer !": "Enter a Participant",
-					"PAY / Create S.O": "CHECKOUT",
+					"PAY": "CHECKOUT",
 					"Use Customer Credit": "Use Available Balance",
 					"Available Credit": "Available Balance",
 					"Redeem Credit": "Redeem Balance",

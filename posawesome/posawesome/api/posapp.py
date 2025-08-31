@@ -560,6 +560,7 @@ def update_invoice_from_order(data):
 @frappe.whitelist()
 def update_invoice(data, container_return=None):
     data = json.loads(data)
+    #frappe.throw(str(data))
     if data.get("name"):
         invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))
         invoice_doc.update(data)
@@ -569,7 +570,7 @@ def update_invoice(data, container_return=None):
     invoice_doc.set_missing_values()
     invoice_doc.flags.ignore_permissions = True
     frappe.flags.ignore_account_permission = True
-    #frappe.throw(str(invoice_doc.as_dict()))
+    #invoice_doc.apply_discount_on = data.get("apply_discount_on")
 
     allow_zero_rated_items = frappe.get_cached_value(
         "POS Profile", invoice_doc.pos_profile, "posa_allow_zero_rated_items"
@@ -649,6 +650,11 @@ def update_invoice(data, container_return=None):
         invoice_doc.set_posting_time = 1
 
     #frappe.throw(str(invoice_doc.taxes[0].as_dict()))
+
+    if data.get("invoiceType") == "Order":
+        # returning invoice template without saving (for Sales Orders)
+        return invoice_doc
+
     try:
         #frappe.throw(_("Total {0}, Rounded Total {1}, Grand Total {2}").format(flt(invoice_doc.total), flt(invoice_doc.rounded_total), flt(invoice_doc.grand_total)))
         invoice_doc.save()
@@ -657,11 +663,12 @@ def update_invoice(data, container_return=None):
         return "error"
 
     else:
+        #frappe.throw(str(invoice_doc.as_dict()))
         return invoice_doc
 
 
 @frappe.whitelist()
-def create_advance_sales_order(invoice, remarks):
+def create_advance_sales_order(invoice, remarks, is_donation):
     # get company abbreviation
     abbr = frappe.get_value("Company", frappe.defaults.get_user_default("company"), 'abbr')
     if abbr == "PTPS":
@@ -679,10 +686,13 @@ def create_advance_sales_order(invoice, remarks):
         new_sales_order.transaction_date = invoice.get("custom_transaction_date")
     else:
         new_sales_order.transaction_date = invoice.get("posting_date")
+    new_sales_order.additional_discount_percentage = invoice.get("additional_discount_percentage")
+    new_sales_order.apply_discount_on = invoice.get("apply_discount_on")
     new_sales_order.delivery_date = invoice.get("posa_delivery_date")
     new_sales_order.custom_posting_time = invoice.get("posting_time")
     new_sales_order.company = invoice.get("company")
     new_sales_order.custom_remarks = remarks
+    new_sales_order.custom_is_donation = is_donation
 
     add_advance_sales_order_items(new_sales_order, t_warehouse, invoice)
     #add_advance_sales_order_taxes(new_sales_order, invoice)
@@ -851,6 +861,7 @@ def delete_invoice_draft(invoice_name):
 def submit_invoice(invoice, data):
     data = json.loads(data)
     invoice = json.loads(invoice)
+    #frappe.throw(str(invoice))
 
     """ if data.get("invoiceType") == "Order" and invoice.get("company") != "Pour Tous Distribution Center":
         # in our case, when we create Sales Orders, we do not create a "Sales Invoice" immediately
@@ -859,7 +870,7 @@ def submit_invoice(invoice, data):
         return create_advance_sales_order(invoice, data.get("remarks")) """
 
     if data.get("invoiceType") == "Order":
-        return create_advance_sales_order(invoice, data.get("remarks"))
+        return create_advance_sales_order(invoice, data.get("remarks"), data.get("is_donation"))
 
     invoice_doc = frappe.get_doc("Sales Invoice", invoice.get("name"))
     invoice_doc.update(invoice)

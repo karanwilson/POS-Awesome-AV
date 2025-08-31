@@ -37,9 +37,16 @@
             item
           </v-btn>
         </v-col>
-        <v-col
+       <!--  <v-col
           v-if="pos_profile.posa_allow_sales_order && pos_profile.posa_enable_fs_payments"
           cols="7"
+          class="pb-2 pr-0"
+        >
+          <Customer></Customer>
+        </v-col> -->
+        <v-col
+          v-if="pos_profile.posa_allow_sales_order && pos_profile.posa_enable_fs_payments"
+          cols="9"
           class="pb-2 pr-0"
         >
           <Customer></Customer>
@@ -84,7 +91,7 @@
           {{ pending_fs_bills }}<v-icon>mdi-account-clock-outline</v-icon>
           </v-btn>
         </v-col>
-        <v-col v-if="pos_profile.posa_allow_sales_order && pos_profile.posa_enable_fs_payments" cols="2" class="pb-2">
+        <!-- <v-col v-if="pos_profile.posa_allow_sales_order && pos_profile.posa_enable_fs_payments" cols="2" class="pb-2">
           <v-select
             dense
             hide-details
@@ -96,7 +103,7 @@
             v-model="invoiceType"
             :disabled="invoiceType == 'Return'"
           ></v-select>
-        </v-col>
+        </v-col> -->
       </v-row>
 
       <v-row
@@ -743,7 +750,7 @@
         </template>
       </div>
     </v-card>
-    <v-card v-if="pos_profile.posa_enable_fs_payments"
+    <v-card v-if="pos_profile.posa_enable_fs_payments && pos_profile.company != 'AV Bakery Cafe'"
       class="cards mb-0 mt-3 py-0 grey lighten-5">
       <v-row no-gutters>
         <v-col cols="5">
@@ -896,8 +903,8 @@
                 block
                 class="pa-0"
                 color="accent"
-                @click="print_draft_invoice"
                 dark
+                @click="new_invoice"
                 >{{ __("Hold Bill") }}</v-btn
               >
             </v-col>
@@ -955,7 +962,7 @@
                 @click="pay_checkout"
                 ref="checkout"
                 dark
-                >{{ __("PAY / Create S.O") }}</v-btn
+                >{{ __("PAY") }}</v-btn
               >
             </v-col>
             <!-- <v-col
@@ -989,6 +996,203 @@
         </v-col>
       </v-row>
     </v-card>
+
+    <v-card v-if="pos_profile.posa_enable_fs_payments && pos_profile.company == 'AV Bakery Cafe'"
+      class="cards mb-0 mt-3 py-0 grey lighten-5">
+      <v-row no-gutters>
+        <v-col cols="5">
+          <v-row no-gutters class="pa-1 pt-9 pr-1">
+            <v-col cols="6" class="pa-1">
+              <v-text-field
+                :value="formtFloat(total_qty)"
+                :label="frappe._('Total Qty')"
+                outlined
+                dense
+                readonly
+                hide-details
+                color="accent"
+              ></v-text-field>
+            </v-col>
+            <v-col
+              v-if="!pos_profile.posa_use_percentage_discount"
+              cols="6"
+              class="pa-1"
+            >
+              <v-text-field
+                :value="formtCurrency(discount_amount)"
+                @change="
+                  setFormatedCurrency(
+                    discount_amount,
+                    'discount_amount',
+                    null,
+                    false,
+                    $event
+                  )
+                "
+                :rules="[isNumber]"
+                :label="frappe._('Additional Discount')"
+                ref="discount"
+                outlined
+                dense
+                hide-details
+                color="warning"
+                :prefix="currencySymbol(pos_profile.currency)"
+                :disabled="
+                  !pos_profile.posa_allow_user_to_edit_additional_discount ||
+                  discount_percentage_offer_name
+                    ? true
+                    : false
+                "
+              ></v-text-field>
+            </v-col>
+            <v-col
+              v-if="pos_profile.posa_use_percentage_discount"
+              cols="6"
+              class="pa-1"
+            >
+              <v-text-field
+                :value="formtFloat(additional_discount_percentage)"
+                @change="
+                  [
+                    setFormatedFloat(
+                      additional_discount_percentage,
+                      'additional_discount_percentage',
+                      null,
+                      false,
+                      $event
+                    ),
+                    update_discount_umount(),
+                  ]
+                "
+                :rules="[isNumber]"
+                :label="frappe._('Additional Discount %')"
+                suffix="%"
+                ref="percentage_discount"
+                outlined
+                dense
+                color="warning"
+                hide-details
+                :disabled="
+                  !pos_profile.posa_allow_user_to_edit_additional_discount ||
+                  discount_percentage_offer_name
+                    ? true
+                    : false
+                "
+              ></v-text-field>
+            </v-col>
+            <v-col cols="6" class="pa-1 mt-2">
+              <v-text-field
+                :value="formtCurrency(total_items_discount_amount)"
+                :prefix="currencySymbol(pos_profile.currency)"
+                :label="frappe._('Items Discounts')"
+                outlined
+                dense
+                color="warning"
+                readonly
+                hide-details
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="6" class="pa-1 mt-2">
+              <v-text-field
+                :value="formtCurrency(subtotal)"
+                :prefix="currencySymbol(pos_profile.currency)"
+                :label="frappe._('Total')"
+                outlined
+                dense
+                readonly
+                hide-details
+                color="success"
+              ></v-text-field>
+              <!--v-text-field
+                :value="formtCurrency_amount(subtotal)"
+                :prefix="currencySymbol(pos_profile.currency)"
+                :label="frappe._('Total')"
+                outlined
+                dense
+                readonly
+                hide-details
+                color="success"
+              ></v-text-field-->
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="7">
+          <v-row no-gutters class="pa-1 pt-2 pl-0">
+            <v-col cols="6" class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                color="warning"
+                dark
+                @click="get_draft_invoices"
+                >{{ __("Held") }}</v-btn
+              >
+            </v-col>
+            <v-col
+              cols="6"
+              class="pa-1"
+            >
+              <v-btn
+                block
+                class="pa-0"
+                color="accent"
+                dark
+                @click="new_invoice"
+                >{{ __("Hold Bill") }}</v-btn
+              >
+            </v-col>
+            <v-col cols="6" class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                color="error"
+                dark
+                @click="cancel_dialog = true"
+                >{{ __("Cancel") }}</v-btn
+              >
+            </v-col>
+            <v-col cols="6" class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                :class="{ 'disable-events': !pos_profile.posa_allow_return }"
+                color="secondary"
+                dark
+                @click="open_returns"
+                >{{ __("Return") }}</v-btn
+              >
+            </v-col>
+            <v-col class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                color="success"
+                @click="pay_checkout"
+                ref="checkout"
+                dark
+                >{{ __("PAY") }}</v-btn
+              >
+            </v-col>
+            <!-- <v-col
+              v-if="pos_profile.posa_allow_print_draft_invoices"
+              cols="6"
+              class="pa-1"
+            >
+              <v-btn
+                block
+                class="pa-0"
+                color="primary"
+                @click="print_draft_invoice"
+                dark
+                >{{ __("Print Draft") }}</v-btn
+              >
+            </v-col> -->
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-card>
+
     <v-card v-if="!pos_profile.posa_enable_fs_payments"
       class="cards mb-0 mt-3 py-0 grey lighten-5">
       <v-row no-gutters>
@@ -1176,7 +1380,7 @@
                 @click="pay_checkout"
                 ref="checkout"
                 dark
-                >{{ __("PAY / Create S.O") }}</v-btn
+                >{{ __("PAY") }}</v-btn
               >
             </v-col>
             <!-- <v-col
@@ -1325,7 +1529,7 @@ export default {
   },
 
   methods: {
-    verify_fs_discount() {
+    /* verify_fs_discount() {
       const vm = this;
       frappe.call({
         method: 'posawesome.posawesome.api.posapp.get_customer_group',
@@ -1344,7 +1548,7 @@ export default {
           }
         }
       })
-    },
+    }, */
     fs_offline_switch() {
       this.fs_offline = !this.fs_offline;
       if (this.fs_offline) {
@@ -1402,8 +1606,10 @@ export default {
                 evntBus.$emit('balance_available', vm.balance_available);
               }
               else {
+                const display_msg = "Balance Response: " + r.message['Result'] + "; Balance: " + r.message['maxAmount']
                 evntBus.$emit('show_mesage', {
-                  text: 'Please verify the FS Account Number for this Customer',
+                  //text: 'Please verify the FS Account Number for this Customer',
+                  text: display_msg,
                   color: 'error',
                 });
                 vm.new_invoice(); // resets the flow
@@ -2210,6 +2416,7 @@ export default {
             }
             else {
               vm.invoice_doc = r.message;
+              //console.log("r.message: ", r.message);
             }
           }
         },
@@ -2241,8 +2448,8 @@ export default {
         return this.update_invoice(doc);
       }
       //else if (doc.company == 'Pour Tous Distribution Center' && this.invoiceType == "Order")
-      else if (this.invoiceType == "Order")
-        return doc;
+      //else if (this.invoiceType == "Order")
+      //  return doc;
       else {
         return this.update_invoice(doc);
       }
@@ -2691,6 +2898,13 @@ export default {
               // item.batch_no is a dummy parameter here (it was used in previous POSA version, and may be used in other function calls of set_batch_qty)
             }
             if (data.has_pricing_rule) {
+              evntBus.$emit("show_mesage", {
+                text: __(`has_pricing_rule: {0}`, [data.has_pricing_rule]),
+                color: "success",
+              });
+              //console.log("data: ", data);
+              // commenting the below statement, as the discounts are handled/calculated in the backend ERPNext.
+              //vm.additional_discount_percentage = data.discount_percentage; // discount_percentage is either set, or 0
             } else if (
               vm.pos_profile.posa_apply_customer_discount &&
               vm.customer_info.posa_discount > 0 &&
@@ -3058,12 +3272,12 @@ export default {
       }
     },
 
-    shortSaveAsOrder(e) {
+    /* shortSaveAsOrder(e) {
       if (e.key === "F4") {
         e.preventDefault();
         this.save_as_order();
       }
-    },
+    }, */
 
     shortDeleteFirstItem(e) {
       if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
@@ -4055,8 +4269,8 @@ export default {
       evntBus.$emit("set_customer", this.customer);
       this.fetch_customer_details();
       this.set_delivery_charges();
-      if (this.customer && (this.pos_profile.company == "Auroville Bakery" || this.pos_profile.company == "AV Bakery Cafe"))
-        this.verify_fs_discount();
+      //if (this.customer && (this.pos_profile.company == "Auroville Bakery" || this.pos_profile.company == "AV Bakery Cafe"))
+      //  this.verify_fs_discount();
     },
     customer_info() {
       evntBus.$emit("set_customer_info_to_edit", this.customer_info);
