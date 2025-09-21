@@ -2441,17 +2441,17 @@ export default {
       return this.invoice_doc;
     },
 
-    process_invoice() {
+    async process_invoice() {
       const doc = this.get_invoice_doc();
       //console.log("this.get_invoice_doc(): ", doc);
       if (doc.name) {
-        return this.update_invoice(doc);
+        return await this.update_invoice(doc);
       }
       //else if (doc.company == 'Pour Tous Distribution Center' && this.invoiceType == "Order")
       //else if (this.invoiceType == "Order")
       //  return doc;
       else {
-        return this.update_invoice(doc);
+        return await this.update_invoice(doc);
       }
     },
 
@@ -2556,7 +2556,10 @@ export default {
         //console.log("Label-F");
         evntBus.$emit("show_payment", "true");
         const invoice_doc = await this.process_invoice();
-        evntBus.$emit("send_invoice_doc_payment", invoice_doc);
+        if (invoice_doc) {
+          //console.log('invoice_doc: ', invoice_doc);
+          evntBus.$emit("send_invoice_doc_payment", invoice_doc);
+        }
       }
     },
 
