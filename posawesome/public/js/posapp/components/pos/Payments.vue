@@ -2036,7 +2036,49 @@ export default {
           //console.log("available_customer_credit: ", available_customer_credit);
           //else this.redeem_customer_credit = false; // resets to false incase it was switched-on before pressing 'cancel payment'
 
-          if (frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') {
+          if (frappe.defaults.get_user_default("company") == 'AV Bakery Cafe Townhall') {
+            if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
+              if (this.customer_group == "Aurocard Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Aurocard"
+                );
+                this.aurocard = true;
+              }
+
+              // else if (this.customer_group == "UPI Payments") {
+              //   default_payment = this.invoice_doc.payments.find(
+              //     (payment) => payment.mode_of_payment == "UPI"
+              //   );
+              //   this.upi = true;
+              // }
+
+              // else if (this.customer_group == "Card Payments") {
+              //   default_payment = this.invoice_doc.payments.find(
+              //     (payment) => payment.mode_of_payment == "Cards"
+              //   );
+              // }
+
+              // else if (this.customer_group == "Cash Payments") {
+              //   default_payment = this.invoice_doc.payments.find(
+              //     (payment) => payment.mode_of_payment == "Cash"
+              //   );
+              // }
+
+              // else if (this.customer_group == "NEFT Payments") {
+              //   default_payment = this.invoice_doc.payments.find(
+              //     (payment) => payment.mode_of_payment == "NEFT"
+              //   );
+              // }
+
+              else {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.default == 1
+                );
+              }
+            }
+          }
+
+          else if (frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') {
             if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
               if (this.customer_group == "Aurocard Payments") {
                 default_payment = this.invoice_doc.payments.find(
