@@ -98,6 +98,7 @@ export default {
         },
         callback: function (r) {
           if (r.message) {
+            //console.log('r.message: ', r.message);
             vm.customers = r.message;
             console.info('loadCustomers');
             if (vm.pos_profile.posa_local_storage) {
@@ -112,7 +113,7 @@ export default {
       });
     },
     getItemText(item) {
-      return `${item.customer_name}   ${item.custom_fs_account_number}`;
+      return `${item.customer_name}   ${item.custom_fs_account_number}   ${item.address_line1}`;
     },
     select_items() {
       evntBus.$emit('select_items'); // pass event to ItemsSelector.vue
