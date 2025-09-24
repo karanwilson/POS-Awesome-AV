@@ -1078,6 +1078,12 @@ export default {
             console.log("upi_payment_response: ", upi_payment_response);
             break;
           }
+          // Temporary function - to be merged with the UPI function above
+          else if (payment.mode_of_payment === "UPI - ICICI") {
+            const upi_payment_response = await this.make_icici_payment();
+            console.log("upi_payment_response: ", upi_payment_response);
+            break;
+          }
           else if (payment.mode_of_payment === "Razorpay") {
             rzp_amount_paisa = payment.amount * 100; // convert to paisa, as Razorpay only accept payment amounts in paisa.
             const rzp_payment_response  = await this.make_rzp_payment(rzp_amount_paisa);
@@ -1697,6 +1703,54 @@ export default {
         else resolve("OK");
       })
     },
+
+    // Temporary function: To be merged with the UPI function above
+    make_icici_payment(upi_amount, tip_amount) {
+      return new Promise((resolve, reject) => {
+        let options = {
+          "tran_type": 1,
+          "amount": upi_amount,
+          "bill_no": this.invoice_doc.name,
+          "tip": tip_amount
+        };
+
+        frappe.call({
+          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.xxx',
+          args: {
+            invoice_doc: vm.invoice_doc,
+            fAmount: fs_amount,
+            fs_acc_balance: vm.balance_available
+          },
+          async: false,
+          callback: function (r) {
+            if (r.message) {
+              const custom_fs_transfer_status = r.message["custom_fs_transfer_status"]
+              vm.invoice_doc.custom_fs_transfer_status = custom_fs_transfer_status;
+              if (vm.invoice_doc.is_return && vm.remarks)
+                vm.invoice_doc.remarks += "\n" + r.message["remarks"]; // in case of return-remarks
+              else if (r.message["remarks"] != "Null") // In case of "Insufficient Funds"
+                vm.invoice_doc.remarks = r.message["remarks"];
+
+              if (custom_fs_transfer_status == "OK") {
+                resolve("OK");
+              }
+              else if (custom_fs_transfer_status == "Insufficient Funds" || custom_fs_transfer_status == "Failed" || custom_fs_transfer_status == "Queued") {
+                vm.is_credit_sale = 1;
+                resolve(custom_fs_transfer_status);
+              }
+              else {
+                evntBus.$emit('show_mesage', {
+                  text: custom_fs_transfer_status,
+                  color: "error",
+                });
+                reject(custom_fs_transfer_status);
+              }
+            }
+          },
+        });
+      })
+    },
+
 
     request_payment() {
       this.phone_dialog = false;

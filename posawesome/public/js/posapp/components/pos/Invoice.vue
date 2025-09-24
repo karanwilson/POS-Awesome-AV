@@ -1511,10 +1511,12 @@ export default {
         this.update_discount_umount();
       let sum = 0;
       this.items.forEach((item) => {
-        sum += flt(item.qty) * flt(item.rate);
+        //sum += flt(item.qty) * flt(item.rate);
+        sum += flt(item.amount);
       });
       sum -= this.flt(this.discount_amount);
       sum += this.flt(this.delivery_charges_rate);
+      console.log('sum: ', sum);
       return this.flt(sum, this.currency_precision, undefined, this.rounding_method);
       //let return_sum = this.bankers_rounding(sum);
       //return return_sum;
@@ -1522,8 +1524,9 @@ export default {
     total_items_discount_amount() {
       let sum = 0;
       this.items.forEach((item) => {
-        sum += flt(item.qty) * flt(item.discount_amount);
+        sum += flt(item.qty, this.float_precision) * flt(item.discount_amount, this.currency_precision);
       });
+      console.log('total_items_discount_amount: ', sum);
       return this.flt(sum, this.float_precision);
     },
   },
