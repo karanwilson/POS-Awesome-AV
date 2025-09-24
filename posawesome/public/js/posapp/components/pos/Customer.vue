@@ -113,7 +113,8 @@ export default {
       });
     },
     getItemText(item) {
-      return `${item.customer_name}   ${item.custom_fs_account_number}   ${item.address_line1}`;
+      //return `${item.customer_name}   ${item.custom_fs_account_number}   ${item.address_line1}`;
+      return `${item.customer_name}   ${item.custom_fs_account_number}`;
     },
     select_items() {
       evntBus.$emit('select_items'); // pass event to ItemsSelector.vue
