@@ -1511,7 +1511,7 @@ export default {
         this.update_discount_umount();
       let sum = 0;
       this.items.forEach((item) => {
-        sum += flt(item.qty, this.currency_precision) * flt(item.rate, this.rounding_method);
+        sum += flt(item.qty, this.float_precision) * flt(item.rate, this.currency_precision);
         //sum += flt(item.amount);
       });
       sum -= this.flt(this.discount_amount);
