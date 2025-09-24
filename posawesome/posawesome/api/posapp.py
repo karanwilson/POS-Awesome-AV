@@ -466,37 +466,38 @@ def get_customer_names(pos_profile):
         condition += get_customer_group_condition(pos_profile)
         # Added custom_fs_account_number in the DB fetch, to be able to filter/search based on FS Account Numbers
         # custom_fs_account_number is a custom field added via fixtures from ptdc_av app
+        customers = frappe.db.sql(
+            """
+            SELECT c.name, c.mobile_no, c.email_id, c.customer_name, custom_fs_account_number, a.address_line1, primary_address
+            FROM tabCustomer c
+
+            LEFT JOIN `tabDynamic Link` dl
+            ON dl.link_doctype = 'Customer'
+            AND dl.link_name = c.name
+            AND dl.parenttype = 'Address'
+
+            LEFT JOIN tabAddress a
+            ON a.name = dl.parent
+
+            where c.{0}
+
+            ORDER by c.name
+            """.format(
+                condition
+            ),
+            as_dict=1,
+        )
         # customers = frappe.db.sql(
         #     """
-        #     SELECT c.name, c.mobile_no, c.email_id, c.customer_name, custom_fs_account_number, a.address_line1, primary_address
-        #     FROM tabCustomer c
-
-        #     LEFT JOIN `tabDynamic Link` dl
-        #     ON dl.link_doctype = 'Customer'
-        #     AND dl.link_name = c.name
-
-        #     JOIN tabAddress a
-        #     ON a.name = dl.parent
-
-        #     where c.{0}
-
+        #     SELECT name, mobile_no, email_id, tax_id, customer_name, primary_address, custom_fs_account_number
+        #     FROM `tabCustomer`
+        #     WHERE {0}
         #     ORDER by name
         #     """.format(
         #         condition
         #     ),
         #     as_dict=1,
         # )
-        customers = frappe.db.sql(
-            """
-            SELECT name, mobile_no, email_id, tax_id, customer_name, primary_address, custom_fs_account_number
-            FROM `tabCustomer`
-            WHERE {0}
-            ORDER by name
-            """.format(
-                condition
-            ),
-            as_dict=1,
-        )
         return customers
 
     if _pos_profile.get("posa_use_server_cache"):
