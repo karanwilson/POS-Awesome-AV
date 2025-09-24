@@ -1510,13 +1510,27 @@ export default {
       if (this.additional_discount_percentage > 0)
         this.update_discount_umount();
       let sum = 0;
-      this.items.forEach((item) => {
+      //this.items.forEach((item) => {
         //sum += flt(item.qty) * flt(item.rate);
-        sum += flt(item.amount);
-      });
+      //});
+      if (this.invoice_doc.is_return == 1) {
+        console.log('this.invoice_doc.is_return: ', this.invoice_doc.is_return);
+        this.items.forEach((item) => {
+          sum += flt(item.amount);
+        });
+        console.log('Return sum: ', sum);
+        //console.log('Rounded Return sum: ', this.flt(sum, this.currency_precision, undefined, this.rounding_method));
+      }
+      else {
+        this.items.forEach((item) => {
+          sum += flt(item.qty) * flt(item.rate);
+        });
+        console.log('sum: ', sum);
+        //console.log('Rounded sum: ', this.flt(sum, this.currency_precision, undefined, this.rounding_method));
+      }
       sum -= this.flt(this.discount_amount);
       sum += this.flt(this.delivery_charges_rate);
-      console.log('sum: ', sum);
+      //console.log('sum: ', sum);
       return this.flt(sum, this.currency_precision, undefined, this.rounding_method);
       //let return_sum = this.bankers_rounding(sum);
       //return return_sum;
@@ -2521,8 +2535,8 @@ export default {
       }
       else if (this.invoice_doc.doctype == "Sales Order") {
         //console.log("Label-B");
-        evntBus.$emit("show_payment", "true");
         const invoice_doc = await this.process_invoice_from_order();
+        evntBus.$emit("show_payment", "true");
         evntBus.$emit("send_invoice_doc_payment", invoice_doc);
       } else if (this.invoice_doc.doctype == "Sales Invoice") {
         //console.log("Label-C");
@@ -2546,21 +2560,21 @@ export default {
         });
         if (sales_invoice_item_doc.sales_order) {
           //console.log("Label-D");
-          evntBus.$emit("show_payment", "true");
           const invoice_doc = await this.process_invoice_from_order();
+          evntBus.$emit("show_payment", "true");
           evntBus.$emit("send_invoice_doc_payment", invoice_doc);
         } else {
           //console.log("Label-E");
-          evntBus.$emit("show_payment", "true");
           const invoice_doc = await this.process_invoice();
+          evntBus.$emit("show_payment", "true");
           evntBus.$emit("send_invoice_doc_payment", invoice_doc);
         }
       } else {
         //console.log("Label-F");
-        evntBus.$emit("show_payment", "true");
         const invoice_doc = await this.process_invoice();
         if (invoice_doc) {
           //console.log('invoice_doc: ', invoice_doc);
+          evntBus.$emit("show_payment", "true");
           evntBus.$emit("send_invoice_doc_payment", invoice_doc);
         }
       }

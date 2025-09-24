@@ -31,6 +31,22 @@
         <v-btn
           icon
           text
+          :color="dynamic_upi_online_color"
+          @click="icici_pos_checkStatus"
+        >
+          <v-icon>{{ dynamic_upi_online_icon }}</v-icon>
+          ICICI UPI
+        </v-btn>
+      </v-col>
+
+      <v-col
+        v-if="pos_profile.posa_enable_fs_payments"
+        cols="1"
+        align="center"
+      >
+        <v-btn
+          icon
+          text
           :color="dynamic_fs_online_color"
           @click="fapi_login"
         >
@@ -202,6 +218,8 @@ export default {
       dynamic_scale_color: 'grey-darken-4', // for dynamically setting color based on browser compatibility
       dynamic_fs_online_color: 'error', // 'success'
       dynamic_fs_online_icon: 'mdi-server-network-off', // 'mdi-server-network'
+      dynamic_upi_online_color: 'error', // 'success'
+      dynamic_upi_online_icon: 'mdi-cash-register', // 'mdi-server-network'
     };
   },
   methods: {
@@ -239,6 +257,26 @@ export default {
       });
     },
     */
+    icici_pos_checkStatus() {
+      const vm = this;
+      frappe.call({
+        method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.icici_check_status',
+        callback: function (r) {
+          if (r.message) {
+            if (r.message == 'OK') {
+              vm.dynamic_upi_online_color = 'success';
+              vm.dynamic_upi_online_icon = 'mdi-cash-register';
+            }
+            else {
+              evntBus.$emit('show_mesage', {
+                text: r.message,
+                color: 'error',
+              });
+            }
+          }
+        },
+      });
+    },
 
     // Request Serial Port for weighing Scale
     request_scale_port() {

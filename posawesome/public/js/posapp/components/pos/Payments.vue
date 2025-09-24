@@ -1075,12 +1075,13 @@ export default {
           }
           else if (payment.mode_of_payment === "UPI") {
             const upi_payment_response = await this.make_upi_payment();
+            //const upi_payment_response = await this.make_icici_payment(payment.amount);
             console.log("upi_payment_response: ", upi_payment_response);
             break;
           }
           // Temporary function - to be merged with the UPI function above
           else if (payment.mode_of_payment === "UPI - ICICI") {
-            const upi_payment_response = await this.make_icici_payment();
+            const upi_payment_response = await this.make_icici_payment(payment.amount);
             console.log("upi_payment_response: ", upi_payment_response);
             break;
           }
@@ -1705,7 +1706,7 @@ export default {
     },
 
     // Temporary function: To be merged with the UPI function above
-    make_icici_payment(upi_amount, tip_amount) {
+    make_icici_payment(upi_amount, tip_amount=0) {
       return new Promise((resolve, reject) => {
         let options = {
           "tran_type": 1,
@@ -1715,7 +1716,7 @@ export default {
         };
 
         frappe.call({
-          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.xxx',
+          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.pushTxn',
           args: {
             invoice_doc: vm.invoice_doc,
             fAmount: fs_amount,

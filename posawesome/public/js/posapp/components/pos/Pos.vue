@@ -201,6 +201,7 @@ export default {
         console.info('LoadPosProfile');
       });
       evntBus.$on('show_payment', (data) => {
+        console.log('POS show_payment (data): ', data);
         this.payment = true ? data === 'true' : false;
         this.offers = false ? data === 'true' : false;
         this.coupons = false ? data === 'true' : false;
