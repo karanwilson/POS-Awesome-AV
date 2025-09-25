@@ -906,6 +906,28 @@ export default {
   }),
 
   methods: {
+    cancel_payment() {
+      if (this.upi) {
+        const vm = this;
+        frappe.call({
+          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.cancelTxn',
+          callback: function (r) {
+            if (r.message) {
+              if (r.message == 'OK') {
+                
+              }
+              else {
+                evntBus.$emit('show_mesage', {
+                  text: r.message,
+                  color: 'error',
+                });
+              }
+            }
+          },
+        });
+      }
+      else this.back_to_invoice();
+    },
     back_to_invoice() {
       evntBus.$emit("show_payment", "false");
       evntBus.$emit("set_customer_readonly", false);
