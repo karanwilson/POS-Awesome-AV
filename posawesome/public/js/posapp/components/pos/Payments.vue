@@ -1103,7 +1103,9 @@ export default {
           }
           // Temporary function - to be merged with the UPI function above
           else if (payment.mode_of_payment === "UPI - ICICI") {
-            const upi_payment_response = await this.make_icici_payment(payment.amount);
+            const tran_type = 16;
+            const tip_amount = 0;
+            const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
             console.log("upi_payment_response: ", upi_payment_response);
             break;
           }
@@ -1728,45 +1730,37 @@ export default {
     },
 
     // Temporary function: To be merged with the UPI function above
-    make_icici_payment(upi_amount, tip_amount=0) {
+    make_icici_upi_payment(tran_type, upi_amount, tip_amount) {
       return new Promise((resolve, reject) => {
-        let options = {
-          "tran_type": 1,
-          "amount": upi_amount,
-          "bill_no": this.invoice_doc.name,
-          "tip": tip_amount
-        };
+        const vm = this;
 
         frappe.call({
           method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.pushTxn',
           args: {
             invoice_doc: vm.invoice_doc,
-            fAmount: fs_amount,
-            fs_acc_balance: vm.balance_available
+            tran_type: tran_type, //16
+            amount: upi_amount,
+            tip: tip_amount
           },
           async: false,
           callback: function (r) {
             if (r.message) {
-              const custom_fs_transfer_status = r.message["custom_fs_transfer_status"]
-              vm.invoice_doc.custom_fs_transfer_status = custom_fs_transfer_status;
+              const custom_upi_transfer_status = r.message["custom_upi_transfer_status"]
+              vm.invoice_doc.custom_upi_transfer_status = custom_upi_transfer_status;
               if (vm.invoice_doc.is_return && vm.remarks)
                 vm.invoice_doc.remarks += "\n" + r.message["remarks"]; // in case of return-remarks
               else if (r.message["remarks"] != "Null") // In case of "Insufficient Funds"
                 vm.invoice_doc.remarks = r.message["remarks"];
 
-              if (custom_fs_transfer_status == "OK") {
-                resolve("OK");
-              }
-              else if (custom_fs_transfer_status == "Insufficient Funds" || custom_fs_transfer_status == "Failed" || custom_fs_transfer_status == "Queued") {
-                vm.is_credit_sale = 1;
-                resolve(custom_fs_transfer_status);
+              if (custom_upi_transfer_status == "Success") {
+                resolve("Success");
               }
               else {
                 evntBus.$emit('show_mesage', {
-                  text: custom_fs_transfer_status,
+                  text: custom_upi_transfer_status,
                   color: "error",
                 });
-                reject(custom_fs_transfer_status);
+                reject(custom_upi_transfer_status);
               }
             }
           },

@@ -24,7 +24,7 @@
       <v-spacer></v-spacer>
 
       <v-col
-        v-if="pos_profile.posa_enable_fs_payments"
+        v-if="pos_profile.posa_enable_fs_payments && (pos_profile.company == 'Pour Tous Purchasing Service' || pos_profile.company == 'Pour Tous Canteen')"
         cols="1"
         align="center"
       >
@@ -260,7 +260,7 @@ export default {
     icici_pos_checkStatus() {
       const vm = this;
       frappe.call({
-        method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.icici_check_status',
+        method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.icici_check_service',
         callback: function (r) {
           if (r.message) {
             if (r.message == 'OK') {
