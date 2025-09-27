@@ -219,7 +219,7 @@ export default {
       dynamic_fs_online_color: 'error', // 'success'
       dynamic_fs_online_icon: 'mdi-server-network-off', // 'mdi-server-network'
       dynamic_upi_online_color: 'error', // 'success'
-      dynamic_upi_online_icon: 'mdi-point-of-sale',
+      dynamic_upi_online_icon: 'mdi-bank-off',
     };
   },
   methods: {
@@ -265,7 +265,7 @@ export default {
           if (r.message) {
             if (r.message == 'OK') {
               vm.dynamic_upi_online_color = 'success';
-              vm.dynamic_upi_online_icon = 'mdi-point-of-sale';
+              vm.dynamic_upi_online_icon = 'mdi-bank';
             }
             else {
               evntBus.$emit('show_mesage', {

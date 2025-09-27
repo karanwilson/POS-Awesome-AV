@@ -817,6 +817,64 @@
         </v-col>
       </v-row>
     </v-card>
+
+    <div>
+      <v-dialog v-model="icici_upi_dialog" max-width="400px">
+        <v-card>
+          <v-card-title>
+            <span class="headline primary--text">{{
+              __("Processing ICICI POS Payment")
+            }}</span>
+          </v-card-title>
+          <row
+            v-for="payment in invoice_doc.payments"
+            :key="payment.name"
+          >
+            <v-card-text
+              class="pa-0"
+              v-if="payment.mode_of_payment == 'UPI'"
+            >
+              <v-container>
+                <v-text-field
+                  dense
+                  outlined
+                  readonly
+                  color="primary"
+                  :label="frappe._(payment.mode_of_payment)"
+                  background-color="white"
+                  hide-details
+                  :value="formtCurrency(payment.amount)"
+                  :prefix="currencySymbol(invoice_doc.currency)"
+                ></v-text-field>
+              </v-container>
+            </v-card-text>
+          </row>
+          <row>
+            <v-card-text
+              :color="dynamic_upi_online_color"
+            >
+              Request received at ICICI:
+              <v-icon>{{ dynamic_upi_online_icon }}</v-icon>
+            </v-card-text>
+            <v-card-text>
+              Please stand by: waiting for confirmation of Transaction
+              <v-progress-linear
+                indeterminate
+                color="white"
+                class="mb-0"
+              ></v-progress-linear>              
+            </v-card-text>
+          </row>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="error" dark @click="cancel_icici_upi_payment">{{
+              __("Cancel")
+            }}</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </div>
+
     <div>
       <v-dialog v-model="phone_dialog" max-width="400px">
         <v-card>
@@ -897,6 +955,9 @@ export default {
     is_donation: 0, // for marking donations in Sales Order
     customer_credit_dict: [],
     phone_dialog: false,
+    icici_upi_dialog: false,
+    dynamic_upi_online_color: 'grey', // 'success'
+    dynamic_upi_online_icon: 'mdi-point-of-sale',
     invoiceType: "Invoice",
     sales_order: "",
     disable_submit: false,
@@ -907,26 +968,7 @@ export default {
 
   methods: {
     cancel_payment() {
-      if (this.upi) {
-        const vm = this;
-        frappe.call({
-          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.cancelTxn',
-          callback: function (r) {
-            if (r.message) {
-              if (r.message == 'OK') {
-                
-              }
-              else {
-                evntBus.$emit('show_mesage', {
-                  text: r.message,
-                  color: 'error',
-                });
-              }
-            }
-          },
-        });
-      }
-      else this.back_to_invoice();
+      this.back_to_invoice();
     },
     back_to_invoice() {
       evntBus.$emit("show_payment", "false");
@@ -1097,7 +1139,9 @@ export default {
           }
           else if (payment.mode_of_payment === "UPI") {
             const upi_payment_response = await this.make_upi_payment();
-            //const upi_payment_response = await this.make_icici_payment(payment.amount);
+            // const tran_type = 16;
+            // const tip_amount = 0;
+            // const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
             console.log("upi_payment_response: ", upi_payment_response);
             break;
           }
@@ -1730,38 +1774,85 @@ export default {
     },
 
     // Temporary function: To be merged with the UPI function above
-    make_icici_upi_payment(tran_type, upi_amount, tip_amount) {
+    async make_icici_upi_payment(tran_type, upi_amount, tip_amount) {
       return new Promise((resolve, reject) => {
+        this.icici_upi_dialog = true;
+
         const vm = this;
 
         frappe.call({
-          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.pushTxn',
+          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.icici_push_txn',
           args: {
             invoice_doc: vm.invoice_doc,
-            tran_type: tran_type, //16
+            tran_type: tran_type, //16 - UPI, 1 - Card
             amount: upi_amount,
             tip: tip_amount
           },
           async: false,
           callback: function (r) {
             if (r.message) {
-              const custom_upi_transfer_status = r.message["custom_upi_transfer_status"]
-              vm.invoice_doc.custom_upi_transfer_status = custom_upi_transfer_status;
-              if (vm.invoice_doc.is_return && vm.remarks)
-                vm.invoice_doc.remarks += "\n" + r.message["remarks"]; // in case of return-remarks
-              else if (r.message["remarks"] != "Null") // In case of "Insufficient Funds"
-                vm.invoice_doc.remarks = r.message["remarks"];
-
-              if (custom_upi_transfer_status == "Success") {
-                resolve("Success");
+              if (r.message["ResponseCode"] == "00" || r.message["ResponseDesc"] == "Success") {
+                vm.dynamic_upi_online_color = "success";
               }
               else {
-                evntBus.$emit('show_mesage', {
-                  text: custom_upi_transfer_status,
+                evntBus.$emit("show_mesage", {
+                  text: __(`Please check the Network/Service/POS availability. ResponseCode: '{0}', ResponseDesc: (1)`, [
+                    r.message["ResponseCode"],
+                    r.message["ResponseDesc"]
+                  ]),
                   color: "error",
                 });
-                reject(custom_upi_transfer_status);
+                reject(r.message);
               }
+            }
+          },
+        });
+
+      })
+    },
+
+    get_upi_confirmation() {
+      frappe.call({
+        method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.get_upi_confirmation',
+        args: {
+          invoice_doc: vm.invoice_doc,
+        },
+        async: false,
+        callback: function (r) {
+          if (r.message) {
+            if (r.message["ResponseCode"] == "00" || r.message["ResponseDesc"] == "Success") {
+              vm.dynamic_upi_online_color = "success";
+            }
+            else {
+              evntBus.$emit("show_mesage", {
+                text: __(`Please check the Network/Service/POS availability. ResponseCode: '{0}', ResponseDesc: (1)`, [
+                  r.message["ResponseCode"],
+                  r.message["ResponseDesc"]
+                ]),
+                color: "error",
+              });
+              reject(r.message);
+            }
+          }
+        },
+      });
+    },
+
+    cancel_icici_upi_payment() {
+      return new Promise((resolve, reject) => {
+        this.icici_upi_dialog = false
+
+        const vm = this;
+
+        frappe.call({
+          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.icici_cancel_txn',
+          args: {
+
+          },
+          async: false,
+          callback: function (r) {
+            if (r.message) {
+
             }
           },
         });
