@@ -1874,6 +1874,7 @@ export default {
         async: false,
         callback: async function (r) {
           if (r.message) {
+          console.log("r.message: ", r.message);
             if (r.message['ResponseCode'] == '00' && r.message["ResponseDesc"] ==  "SUCCESS") {
               vm.invoice_doc.custom_upi_transfer_status = r.message["custom_upi_transfer_status"];
               vm.invoice_doc.remarks = JSON.stringify(r.message); // record the json in the remarks string
