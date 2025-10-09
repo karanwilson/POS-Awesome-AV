@@ -857,13 +857,15 @@
               >{{ dynamic_upi_online_icon }}</v-icon>
             </v-card-text>
             <v-card-text>
-              Please scan the Dynamic QR to Pay
+              Please scan the Dynamic QR to Pay <br>
+              <br>
+              After Customer device shows confirmation screen, click the Check/Submit UPI button
             </v-card-text>
           </row>
           <v-card-actions>
             <v-spacer></v-spacer>
+            <!-- :disabled="!upi_timeout" -->
             <v-btn color="primary" dark @click="get_upi_confirmation"
-            :disabled="!upi_timeout"
             >{{
               __("Check/Submit UPI")
             }}</v-btn>
@@ -957,7 +959,7 @@ export default {
     customer_credit_dict: [],
     phone_dialog: false,
     icici_upi_dialog: false,
-    upi_timeout: false,
+    //upi_timeout: false,
     erp_tran_id: '', // used in UPI transactions
     tran_type: '', // used in UPI transactions
     print_upi: false, // for passing print option to the UPI payment flow
@@ -994,7 +996,7 @@ export default {
       this.tran_type = '';
       this.dynamic_upi_online_color = 'grey';
       this.print_upi = false;
-      this.upi_timeout = false;
+      //this.upi_timeout = false;
     },
     async submit(event, payment_received = false, print = false) {
       if (this.invoiceType == "Invoice") {
@@ -1153,7 +1155,7 @@ export default {
             break;
           }
           // Temporary function - to be merged with the UPI function above
-          else if (payment.mode_of_payment === "UPI - ICICI") {
+          else if (payment.mode_of_payment === "ICICI UPI") {
             const tran_type = 16;
             const tip_amount = 0;
             this.print_upi = print; // for passing print option to the UPI payment flow
@@ -1812,9 +1814,9 @@ export default {
                 resolve(r.message["custom_upi_transfer_status"]);
               }
               else if (r.message["ResponseCode"] == "00" || r.message["ResponseDesc"] == "Success") {
-                setTimeout(() => {
-                  this.upi_timeout = true;
-                }, 40000);
+                // setTimeout(() => {
+                //   this.upi_timeout = true;
+                // }, 40000);
 
                 vm.dynamic_upi_online_color = "success";
                 vm.erp_tran_id = r.message["erp_tran_id"];
@@ -1824,10 +1826,11 @@ export default {
                 //resolve(txn_status);
                 console.log("tran_type: ", tran_type);
 
-                const vm2 = vm;
+                /* const vm2 = vm;
                 frappe.call({
                   method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.icici_webhook_callback',
                   args: { erp_tran_id: vm2.erp_tran_id },
+                  async: false,
                   callback: function (r) {
                     if (r.message) {
                       console.log('r.message: ', r.message);
@@ -1840,7 +1843,7 @@ export default {
                       }
                     }
                   }
-                })
+                }) */
               }
               else {
                 evntBus.$emit("show_mesage", {
@@ -1892,11 +1895,11 @@ export default {
             }
             else {
               evntBus.$emit("show_mesage", {
-                text: __(`Please check the Network/Service/POS availability. ResponseCode: {0}, ResponseDesc: {1}`, [
+                text: __(`Please wait for Customer Device confirmation, or check the Network/Service/POS availability.\n ResponseCode: {0}, ResponseDesc: {1}`, [
                   r.message["ResponseCode"],
                   r.message["ResponseDesc"]
                 ]),
-                color: "error",
+                color: "warning",
               });
               console.log(r.message);
             }
@@ -1908,30 +1911,36 @@ export default {
     cancel_upi_payment() {
       const vm = this;
 
-      frappe.call({
-        method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.cancel_txn',
-        args: {
-          bill_no: vm.invoice_doc.name,
-          tran_type: vm.tran_type, //16 - UPI, 1 - Card
-          erp_tran_id: vm.erp_tran_id
-        },
-        async: false,
-        callback: function (r) {
-          if (r.message) {
-            if (r.message["RspCode"] == "00" || r.message["RspDesc"] == "Success") {
-              vm.icici_upi_dialog = false;
-              evntBus.$emit("show_mesage", {
-                text: __(`UPI Transaction cancelled. ResponseCode: {0}, ResponseDesc: {1}`, [
-                  r.message["RspCode"],
-                  r.message["RspDesc"]
-                ]),
-                color: "warning",
-              });
-              console.log(r.message);
+      if (vm.erp_tran_id) {
+        frappe.call({
+          method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.cancel_txn',
+          args: {
+            bill_no: vm.invoice_doc.name,
+            tran_type: vm.tran_type, //16 - UPI, 1 - Card
+            erp_tran_id: vm.erp_tran_id
+          },
+          async: false,
+          callback: function (r) {
+            if (r.message) {
+              if (r.message["RspCode"] == "00" || r.message["RspDesc"] == "Success") {
+                vm.icici_upi_dialog = false;
+                evntBus.$emit("show_mesage", {
+                  text: __(`UPI Transaction cancelled. ResponseCode: {0}, ResponseDesc: {1}`, [
+                    r.message["RspCode"],
+                    r.message["RspDesc"]
+                  ]),
+                  color: "warning",
+                });
+                console.log(r.message);
+              }
             }
-          }
-        },
-      });
+          },
+        });
+      }
+
+      else {
+        vm.icici_upi_dialog = false;
+      }
     },
 
 
