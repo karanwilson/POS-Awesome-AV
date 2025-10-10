@@ -1163,6 +1163,30 @@ export default {
             console.log("upi_payment_response: ", upi_payment_response);
             break;
           }
+          else if (payment.mode_of_payment === "RuPay") {
+            const tran_type = 1;
+            const tip_amount = 0;
+            this.print_upi = print; // for passing print option to the UPI payment flow
+            const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
+            console.log("upi_payment_response: ", upi_payment_response);
+            break;
+          }
+          else if (payment.mode_of_payment === "Debit Card") {
+            const tran_type = 1;
+            const tip_amount = 0;
+            this.print_upi = print; // for passing print option to the UPI payment flow
+            const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
+            console.log("upi_payment_response: ", upi_payment_response);
+            break;
+          }
+          else if (payment.mode_of_payment === "Credit Card") {
+            const tran_type = 1;
+            const tip_amount = 0;
+            this.print_upi = print; // for passing print option to the UPI payment flow
+            const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
+            console.log("upi_payment_response: ", upi_payment_response);
+            break;
+          }
           else if (payment.mode_of_payment === "Razorpay") {
             rzp_amount_paisa = payment.amount * 100; // convert to paisa, as Razorpay only accept payment amounts in paisa.
             const rzp_payment_response  = await this.make_rzp_payment(rzp_amount_paisa);
@@ -2238,31 +2262,6 @@ export default {
                 this.aurocard = true;
               }
 
-              // else if (this.customer_group == "UPI Payments") {
-              //   default_payment = this.invoice_doc.payments.find(
-              //     (payment) => payment.mode_of_payment == "UPI"
-              //   );
-              //   this.upi = true;
-              // }
-
-              // else if (this.customer_group == "Card Payments") {
-              //   default_payment = this.invoice_doc.payments.find(
-              //     (payment) => payment.mode_of_payment == "Cards"
-              //   );
-              // }
-
-              // else if (this.customer_group == "Cash Payments") {
-              //   default_payment = this.invoice_doc.payments.find(
-              //     (payment) => payment.mode_of_payment == "Cash"
-              //   );
-              // }
-
-              // else if (this.customer_group == "NEFT Payments") {
-              //   default_payment = this.invoice_doc.payments.find(
-              //     (payment) => payment.mode_of_payment == "NEFT"
-              //   );
-              // }
-
               else {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.default == 1
@@ -2283,8 +2282,27 @@ export default {
               else if (this.customer_group == "UPI Payments") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "UPI"
+                  //(payment) => payment.mode_of_payment == "ICICI UPI"
                 );
                 this.upi = true;
+              }
+
+              else if (this.customer_group == "MOP RuPay") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "RuPay"
+                );
+              }
+
+              else if (this.customer_group == "MOP Debit Card") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Debit Card"
+                );
+              }
+
+              else if (this.customer_group == "MOP Credit Card") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Credit Card"
+                );
               }
 
               else if (this.customer_group == "Card Payments") {
