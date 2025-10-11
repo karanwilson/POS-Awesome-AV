@@ -1245,7 +1245,7 @@ export default {
         data["is_donation"] = this.is_donation;
 
         //console.log("this.pos_profile.posa_allow_credit_sale: ", this.pos_profile.posa_allow_credit_sale);
-        if ((frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') &&
+        if ((this.pos_profile.company != 'Pour Tous Distribution Center') &&
               (totalPayedAmount == 0 && this.redeemed_customer_credit == 0 && this.is_credit_sale == 0 && this.invoiceType != "Order")) {
           evntBus.$emit("show_mesage", {
             text: "Please set a Mode of Payment",
@@ -1332,6 +1332,7 @@ export default {
         }
       })
     },
+
     set_full_amount(idx) {
       let mop;
       this.invoice_doc.payments.forEach((payment) => {
@@ -1345,19 +1346,58 @@ export default {
         }
         else payment.amount = 0;
       });
-      if (mop == 'Aurocard')
-        {
-          this.aurocard = true;
-          this.upi = false;
+
+      if (this.pos_profile.company == 'Pour Tous Purchasing Service') {
+        if (mop == 'Aurocard')
+          {
+            this.aurocard = true;
+            this.upi = false;
+            this.update_invoice_transaction_fee(mop, remove_transaction_fee='1')
+          }
+        else if (mop == 'UPI')
+          {
+            this.upi = true;
+            this.aurocard = false;
+            this.update_invoice_transaction_fee(mop, remove_transaction_fee='1')
+          }
+        else if (mop == 'RuPay')
+          {
+            this.aurocard = this.upi = false;
+            this.update_invoice_transaction_fee(mop, remove_transaction_fee='1')
+          }
+        else if (mop == 'Debit Card')
+          {
+            this.aurocard = this.upi = false;
+            this.update_invoice_transaction_fee(mop, remove_transaction_fee='0')
+          }
+        else if (mop == 'Credit Card')
+          {
+            this.aurocard = this.upi = false;
+            this.update_invoice_transaction_fee(mop, remove_transaction_fee='0')
+          }
+        else {
+          this.aurocard = this.upi = false;
+          this.update_invoice_transaction_fee(mop, remove_transaction_fee='1')
         }
-      else if (mop == 'UPI')
-        {
-          this.upi = true;
-          this.aurocard = false;
-        }
-      else this.aurocard = this.upi = false;
+      }
+
+      else {
+        if (mop == 'Aurocard')
+          {
+            this.aurocard = true;
+            this.upi = false;
+          }
+        else if (mop == 'UPI')
+          {
+            this.upi = true;
+            this.aurocard = false;
+          }
+        else this.aurocard = this.upi = false;
+      }
+
       this.redeem_customer_credit = false;
     },
+
     set_rest_amount(idx) {
       this.invoice_doc.payments.forEach((payment) => {
         if (
@@ -1443,7 +1483,7 @@ export default {
             });
             return;
           }
-          else if (frappe.defaults.get_user_default("company") == 'Pour Tous Distribution Center')
+          else if (this.pos_profile.company == 'Pour Tous Distribution Center')
             this.submit(undefined, false, false); // at PTDC 'Print' is set'to false (3rd argument)
           else
             this.submit(undefined, false, true);
@@ -1947,18 +1987,22 @@ export default {
           async: false,
           callback: function (r) {
             if (r.message) {
-              if (r.message["RspCode"] == "00" || r.message["RspDesc"] == "Success") {
-                vm.icici_upi_dialog = false;
-                evntBus.$emit("show_mesage", {
-                  text: __(`UPI Transaction cancelled. ResponseCode: {0}, ResponseDesc: {1}`, [
-                    r.message["RspCode"],
-                    r.message["RspDesc"]
-                  ]),
-                  color: "warning",
-                });
-                console.log(r.message);
-              }
+              evntBus.$emit("show_mesage", {
+                text: __(`UPI Transaction cancelled. ResponseCode: {0}, ResponseDesc: {1}`, [
+                  r.message["RspCode"],
+                  r.message["RspDesc"]
+                ]),
+                color: "warning",
+              });
+              console.log(r.message);
+
+              // if (r.message["RspCode"] == "00" || r.message["RspDesc"] == "Success") {
+              // }
+              // else {
+              //   vm.icici_upi_dialog = false;
+              // }
             }
+            vm.icici_upi_dialog = false;
           },
         });
       }
@@ -1966,6 +2010,42 @@ export default {
       else {
         vm.icici_upi_dialog = false;
       }
+    },
+
+
+    update_invoice_transaction_fee(mop, remove_transaction_fee) {
+      const vm = this;
+
+      frappe
+        .call({
+          method: "posawesome.posawesome.api.posapp.update_invoice_transaction_fee",
+          args: {
+            mop: mop,
+            remove_transaction_fee: remove_transaction_fee,
+            invoice_name: vm.invoice_doc.name
+          },
+          async: false,
+          callback: function (r) {
+            if (r.message) {
+              console.log("r.message: ", r.message);
+              console.log("mop: ", mop);
+              vm.invoice_doc = r.message;
+
+              let default_payment = '';
+
+              default_payment = vm.invoice_doc.payments.find(
+                (payment) => payment.mode_of_payment == mop
+              );
+
+              if (default_payment) {
+                default_payment.amount = vm.flt(
+                  vm.invoice_doc.rounded_total || vm.invoice_doc.grand_total,
+                  vm.currency_precision
+                ) - vm.redeemed_customer_credit;
+              };
+            };
+          },
+        })
     },
 
 
@@ -2220,7 +2300,7 @@ export default {
       evntBus.$on("send_invoice_doc_payment", async (invoice_doc) => {
         this.invoice_doc = invoice_doc;
 
-        if (frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') {
+        if (this.pos_profile.company != 'Pour Tous Distribution Center') {
           const vm = this;
           frappe.call({
             method: 'posawesome.posawesome.api.posapp.get_customer_group',
@@ -2253,24 +2333,58 @@ export default {
           //console.log("available_customer_credit: ", available_customer_credit);
           //else this.redeem_customer_credit = false; // resets to false incase it was switched-on before pressing 'cancel payment'
 
-          if (frappe.defaults.get_user_default("company") == 'AV Bakery Cafe Townhall') {
+          if (this.pos_profile.company == 'Pour Tous Purchasing Service') {
             if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
               if (this.customer_group == "Aurocard Payments") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "Aurocard"
                 );
                 this.aurocard = true;
+                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='1')
+              }
+
+              else if (this.customer_group == "UPI Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  //(payment) => payment.mode_of_payment == "UPI"
+                  (payment) => payment.mode_of_payment == "ICICI UPI"
+                );
+                this.upi = true;
+                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='1')
+              }
+
+              else if (this.customer_group == "MOP RuPay") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "RuPay"
+                );
+                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='1')
+              }
+
+              else if (this.customer_group == "MOP Debit Card") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Debit Card"
+                );
+                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='0')
+              }
+
+              else if (this.customer_group == "MOP Credit Card") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Credit Card"
+                );
+                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='0')
               }
 
               else {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.default == 1
                 );
+                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='1')
               }
             }
           }
 
-          else if (frappe.defaults.get_user_default("company") != 'Pour Tous Distribution Center') {
+
+          else if (this.pos_profile.company == 'Auroville Bakery' ||
+                    this.pos_profile.company == 'AV Bakery Cafe') {
             if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
               if (this.customer_group == "Aurocard Payments") {
                 default_payment = this.invoice_doc.payments.find(
@@ -2282,27 +2396,8 @@ export default {
               else if (this.customer_group == "UPI Payments") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "UPI"
-                  //(payment) => payment.mode_of_payment == "ICICI UPI"
                 );
                 this.upi = true;
-              }
-
-              else if (this.customer_group == "MOP RuPay") {
-                default_payment = this.invoice_doc.payments.find(
-                  (payment) => payment.mode_of_payment == "RuPay"
-                );
-              }
-
-              else if (this.customer_group == "MOP Debit Card") {
-                default_payment = this.invoice_doc.payments.find(
-                  (payment) => payment.mode_of_payment == "Debit Card"
-                );
-              }
-
-              else if (this.customer_group == "MOP Credit Card") {
-                default_payment = this.invoice_doc.payments.find(
-                  (payment) => payment.mode_of_payment == "Credit Card"
-                );
               }
 
               else if (this.customer_group == "Card Payments") {
@@ -2331,6 +2426,24 @@ export default {
             }
           }
 
+
+          else if (this.pos_profile.company == 'AV Bakery Cafe Townhall') {
+            if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
+              if (this.customer_group == "Aurocard Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Aurocard"
+                );
+                this.aurocard = true;
+              }
+
+              else {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.default == 1
+                );
+              }
+            }
+          }
+
           // In case of PTDC the vairable "default_payment" below is not set
           //if (default_payment && !invoice_doc.is_return) {
           if (default_payment) {
@@ -2342,7 +2455,7 @@ export default {
 
           if (invoice_doc.is_return) {
             this.is_return = true;
-            if ((frappe.defaults.get_user_default("company") == 'Pour Tous Distribution Center') || default_payment.mode_of_payment != 'FS') {
+            if ((this.pos_profile.company == 'Pour Tous Distribution Center') || default_payment.mode_of_payment != 'FS') {
               this.is_cashback = false;
               this.aurocard = false;
               this.upi = false;
@@ -2367,7 +2480,7 @@ export default {
         this.is_write_off_change = 0;
 
         // In case of PTDC (with FS payments disabled), is_cashback is disabled in order to create credit-notes
-        //if ((frappe.defaults.get_user_default("company") == 'Pour Tous Distribution Center') && this.invoice_doc.is_return)
+        //if ((this.pos_profile.company == 'Pour Tous Distribution Center') && this.invoice_doc.is_return)
         //  this.is_cashback = false;
 
         this.loyalty_amount = 0;

@@ -142,7 +142,7 @@ export default {
       const textThree = item.email_id ? item.email_id.toLowerCase() : '';
       const textFour = item.mobile_no ? item.mobile_no.toLowerCase() : '';
       //const textFifth = item.name.toLowerCase();
-      const textSixth = item.custom_fs_account_number ? item.custom_fs_account_number.toLowerCase() : '';
+      const textFifth = item.custom_fs_account_number ? item.custom_fs_account_number.toLowerCase() : '';
       const searchText = queryText.toLowerCase();
 
       return (
@@ -151,7 +151,7 @@ export default {
         textThree.indexOf(searchText) > -1 ||
         textFour.indexOf(searchText) > -1 ||
         //textFifth.indexOf(searchText) > -1 ||
-        textSixth.indexOf(searchText) > -1
+        textFifth.indexOf(searchText) == 0
       );
     },
   },
