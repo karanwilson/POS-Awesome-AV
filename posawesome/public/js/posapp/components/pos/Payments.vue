@@ -832,7 +832,7 @@
           >
             <v-card-text
               class="pa-0"
-              v-if="payment.mode_of_payment == 'UPI'"
+              v-if="payment.amount != 0"
             >
               <v-container>
                 <v-text-field
@@ -1171,7 +1171,7 @@ export default {
             console.log("upi_payment_response: ", upi_payment_response);
             break;
           }
-          else if (payment.mode_of_payment === "Debit Card") {
+          else if (payment.mode_of_payment === "Cards") {
             const tran_type = 1;
             const tip_amount = 0;
             this.print_upi = print; // for passing print option to the UPI payment flow
@@ -1179,7 +1179,7 @@ export default {
             console.log("upi_payment_response: ", upi_payment_response);
             break;
           }
-          else if (payment.mode_of_payment === "Credit Card") {
+          else if (payment.mode_of_payment === "Debit Card") {
             const tran_type = 1;
             const tip_amount = 0;
             this.print_upi = print; // for passing print option to the UPI payment flow
@@ -1365,12 +1365,12 @@ export default {
             this.aurocard = this.upi = false;
             this.update_invoice_transaction_fee(mop, remove_transaction_fee='1')
           }
-        else if (mop == 'Debit Card')
+        else if (mop == 'Cards')
           {
             this.aurocard = this.upi = false;
             this.update_invoice_transaction_fee(mop, remove_transaction_fee='0')
           }
-        else if (mop == 'Credit Card')
+        else if (mop == 'Debit Card')
           {
             this.aurocard = this.upi = false;
             this.update_invoice_transaction_fee(mop, remove_transaction_fee='0')
@@ -2356,15 +2356,15 @@ export default {
                 );
               }
 
-              else if (this.customer_group == "MOP Debit Card") {
+              else if (this.customer_group == "MOP Cards") {
                 default_payment = this.invoice_doc.payments.find(
-                  (payment) => payment.mode_of_payment == "Debit Card"
+                  (payment) => payment.mode_of_payment == "Cards"
                 );
               }
 
-              else if (this.customer_group == "MOP Credit Card") {
+              else if (this.customer_group == "MOP Debit Card") {
                 default_payment = this.invoice_doc.payments.find(
-                  (payment) => payment.mode_of_payment == "Credit Card"
+                  (payment) => payment.mode_of_payment == "Debit Card"
                 );
               }
 

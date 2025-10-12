@@ -746,11 +746,10 @@ def update_invoice(data, container_return=None):
 
         chargeable_mop = None
         customer_group = get_customer_group(invoice_doc.customer)
-        if customer_group == "MOP Debit Card":
-            chargeable_mop = "Debit Card"
-        elif customer_group == "MOP Credit Card":
-            chargeable_mop = "Credit Card"
-
+        if customer_group == "MOP Cards":
+            chargeable_mop = "Cards"
+        # elif customer_group == "MOP Debit Card":
+        #     chargeable_mop = "Debit Card"
         if chargeable_mop:
             return update_invoice_transaction_fee(mop=chargeable_mop, remove_transaction_fee='0', invoice_name=None, invoice_doc=invoice_doc)
 
