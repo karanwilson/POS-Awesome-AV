@@ -605,6 +605,7 @@ def update_invoice_transaction_fee(mop, remove_transaction_fee, invoice_name=Non
 
         if transaction_fee_percentage > 0:
             transaction_fee = flt(invoice_doc.grand_total) * transaction_fee_percentage/100
+            cost_center = frappe.db.get_value("Company", frappe.defaults.get_user_default("company"), "cost_center")
 
             charges_row = invoice_doc.append("taxes", {})
             charges_row.update(
@@ -616,6 +617,7 @@ def update_invoice_transaction_fee(mop, remove_transaction_fee, invoice_name=Non
                     "charge_type": "Actual",
                     "tax_amount": flt(transaction_fee),
                     "account_head": icici_controller.transaction_fee_account,
+                    "cost_center": cost_center
                 }
             )
             charges_row.db_insert()

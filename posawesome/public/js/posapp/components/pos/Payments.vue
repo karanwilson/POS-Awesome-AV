@@ -1870,7 +1870,7 @@ export default {
           callback: function (r) {
             if (r.message) {
               console.log('r.message: ', r.message);
-              if (r.message['custom_upi_transfer_status'] == "SUCCESS") {
+              if (r.message["ResponseCode"] == "00" && r.message['ir_status'] == "Completed") {
                 vm.invoice_doc.custom_upi_transfer_status = r.message["custom_upi_transfer_status"];
                 vm.invoice_doc.remarks = JSON.stringify(r.message); // record the json in the remarks string
 
@@ -1939,7 +1939,7 @@ export default {
         callback: async function (r) {
           if (r.message) {
           console.log("r.message: ", r.message);
-            if (r.message['ResponseCode'] == '00' && r.message["ResponseDesc"] ==  "SUCCESS") {
+            if (r.message['ResponseCode'] == '00' || r.message["ResponseDesc"] ==  "SUCCESS" || r.message["ResponseDesc"] == "Approved or completed successfully") {
               vm.invoice_doc.custom_upi_transfer_status = r.message["custom_upi_transfer_status"];
               vm.invoice_doc.remarks = JSON.stringify(r.message); // record the json in the remarks string
 
@@ -2340,7 +2340,6 @@ export default {
                   (payment) => payment.mode_of_payment == "Aurocard"
                 );
                 this.aurocard = true;
-                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='1')
               }
 
               else if (this.customer_group == "UPI Payments") {
@@ -2349,35 +2348,30 @@ export default {
                   (payment) => payment.mode_of_payment == "ICICI UPI"
                 );
                 this.upi = true;
-                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='1')
               }
 
               else if (this.customer_group == "MOP RuPay") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "RuPay"
                 );
-                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='1')
               }
 
               else if (this.customer_group == "MOP Debit Card") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "Debit Card"
                 );
-                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='0')
               }
 
               else if (this.customer_group == "MOP Credit Card") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "Credit Card"
                 );
-                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='0')
               }
 
               else {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.default == 1
                 );
-                //this.update_invoice_transaction_fee(default_payment.mode_of_payment, remove_transaction_fee='1')
               }
             }
           }
