@@ -24,7 +24,7 @@
       <v-spacer></v-spacer>
 
       <v-col
-        v-if="pos_profile.posa_enable_fs_payments"
+        v-if="pos_profile.posa_enable_fs_payments && (pos_profile.company == 'Pour Tous Purchasing Service' || pos_profile.company == 'Pour Tous Canteen')"
         cols="1"
         align="center"
       >
@@ -219,7 +219,7 @@ export default {
       dynamic_fs_online_color: 'error', // 'success'
       dynamic_fs_online_icon: 'mdi-server-network-off', // 'mdi-server-network'
       dynamic_upi_online_color: 'error', // 'success'
-      dynamic_upi_online_icon: 'mdi-point-of-sale',
+      dynamic_upi_online_icon: 'mdi-bank-off',
     };
   },
   methods: {
@@ -260,12 +260,12 @@ export default {
     icici_pos_checkStatus() {
       const vm = this;
       frappe.call({
-        method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.icici_check_status',
+        method: 'payments.payment_gateways.doctype.upi_settings.upi_settings.icici_check_service',
         callback: function (r) {
           if (r.message) {
-            if (r.message == 'OK') {
+            if (r.message["ResponseCode"] == '01') {
               vm.dynamic_upi_online_color = 'success';
-              vm.dynamic_upi_online_icon = 'mdi-point-of-sale';
+              vm.dynamic_upi_online_icon = 'mdi-bank';
             }
             else {
               evntBus.$emit('show_mesage', {
@@ -408,8 +408,11 @@ export default {
         }
         this.$nextTick(function() { // to wait for $el to be initialised
           //this.fs_online = true;
-          if (this.pos_profile.posa_enable_fs_payments)
+          if (this.pos_profile.posa_enable_fs_payments) {
             this.fapi_login();
+            if (this.pos_profile.company == 'Pour Tous Purchasing Service' || this.pos_profile.company == 'Pour Tous Canteen')
+              this.icici_pos_checkStatus();
+          }
           if (this.pos_profile.posa_input_qty && this.pos_profile.posa_input_weighing_scale) {
             this.$refs.allow_scale_button.$el.focus(); // request permission for accessing the scale port
             console.info('request_scale_port');

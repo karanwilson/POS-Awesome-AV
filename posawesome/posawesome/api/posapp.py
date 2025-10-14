@@ -32,6 +32,7 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
     get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
 from frappe.utils.caching import redis_cache
+#import os
 
 
 @frappe.whitelist()
@@ -579,6 +580,63 @@ def update_invoice_from_order(data):
 
 
 @frappe.whitelist()
+def remove_existing_transaction_fee(invoice_doc, transaction_fee_account):
+    taxes_charges_array = invoice_doc.taxes
+    # remove any existing transaction fees
+    for row in taxes_charges_array:
+        if row.get("account_head") == transaction_fee_account:
+            taxes_charges_array.remove(row)
+
+
+@frappe.whitelist()
+def update_invoice_transaction_fee(mop, remove_transaction_fee, invoice_name=None, invoice_doc=None):
+    if not invoice_doc: # if call is not from the update_invoice method below, but from the frontend Payments.vue
+        invoice_doc = frappe.get_doc("Sales Invoice", invoice_name)
+
+    icici_controller = frappe.get_doc("UPI Settings")
+
+    if invoice_doc.taxes:
+        remove_existing_transaction_fee(invoice_doc, icici_controller.transaction_fee_account)
+
+    if remove_transaction_fee == '0':
+        # Add transaction fees if applicable
+        transaction_fee_percentage = frappe.db.get_value("Mode of Payment", mop, "custom_transaction_fee_percentage")
+        #frappe.throw(str(transaction_fee_percentage))
+
+        if transaction_fee_percentage > 0:
+            transaction_fee = flt(invoice_doc.grand_total) * transaction_fee_percentage/100
+            cost_center = frappe.db.get_value("Company", frappe.defaults.get_user_default("company"), "cost_center")
+
+            charges_row = invoice_doc.append("taxes", {})
+            charges_row.update(
+                {
+                    "description": _("{0} Charges").format(mop),
+                    #"description": str(tax_type).split(" - ")[0][-4:],
+                    # 'split' returns a list of 2 elements from either side of "-"; [0] extracts the 1st one;
+                    # [-4] extracts the last 4 characters of the 1st element of the set.
+                    "charge_type": "Actual",
+                    "tax_amount": flt(transaction_fee),
+                    "account_head": icici_controller.transaction_fee_account,
+                    "cost_center": cost_center
+                }
+            )
+            charges_row.db_insert()
+
+        else:
+            return
+
+    try:
+        #frappe.throw(str(invoice_doc.as_dict()))
+        invoice_doc.save()
+    except Exception as err:
+        frappe.msgprint(str(err))
+        return "error"
+
+    else:
+        return invoice_doc
+
+
+@frappe.whitelist()
 def update_invoice(data, container_return=None):
     data = json.loads(data)
     #frappe.throw(str(data))
@@ -685,6 +743,16 @@ def update_invoice(data, container_return=None):
 
     else:
         #frappe.throw(str(invoice_doc.as_dict()))
+
+        chargeable_mop = None
+        customer_group = get_customer_group(invoice_doc.customer)
+        if customer_group == "MOP Cards":
+            chargeable_mop = "Cards"
+        # elif customer_group == "MOP Debit Card":
+        #     chargeable_mop = "Debit Card"
+        if chargeable_mop:
+            return update_invoice_transaction_fee(mop=chargeable_mop, remove_transaction_fee='0', invoice_name=None, invoice_doc=invoice_doc)
+
         return invoice_doc
 
 
