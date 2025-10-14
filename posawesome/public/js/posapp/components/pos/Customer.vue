@@ -145,14 +145,26 @@ export default {
       const textFifth = item.custom_fs_account_number ? item.custom_fs_account_number.toLowerCase() : '';
       const searchText = queryText.toLowerCase();
 
-      return (
-        textOne.indexOf(searchText) > -1 ||
-        textTwo.indexOf(searchText) > -1 ||
-        textThree.indexOf(searchText) > -1 ||
-        textFour.indexOf(searchText) > -1 ||
-        //textFifth.indexOf(searchText) > -1 ||
-        textFifth.indexOf(searchText) == 0
-      );
+      if (frappe.defaults.get_user_default("company") == "Pour Tous Distribution Center") {
+        return ( // do not return exact match for PT accounts for PTDC - return the existing pattern match
+          textOne.indexOf(searchText) > -1 ||
+          textTwo.indexOf(searchText) > -1 ||
+          textThree.indexOf(searchText) > -1 ||
+          textFour.indexOf(searchText) > -1 ||
+          //textFifth.indexOf(searchText) == 0 ||
+          textFifth.indexOf(searchText) > -1
+        );
+      }
+      else {
+        return ( // returns an exact match for FS accounts
+          textOne.indexOf(searchText) > -1 ||
+          textTwo.indexOf(searchText) > -1 ||
+          textThree.indexOf(searchText) > -1 ||
+          textFour.indexOf(searchText) > -1 ||
+          //textFifth.indexOf(searchText) > -1 ||
+          textFifth.indexOf(searchText) == 0
+        );
+      }
     },
   },
 
