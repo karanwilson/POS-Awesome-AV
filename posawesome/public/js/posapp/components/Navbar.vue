@@ -24,7 +24,7 @@
       <v-spacer></v-spacer>
 
       <v-col
-        v-if="pos_profile.posa_enable_fs_payments && (pos_profile.company == 'Pour Tous Purchasing Service' || pos_profile.company == 'Pour Tous Canteen')"
+        v-if="pos_profile.posa_enable_fs_payments && (pos_profile.company == 'Pour Tous Purchasing Service')"
         cols="1"
         align="center"
       >
@@ -410,7 +410,7 @@ export default {
           //this.fs_online = true;
           if (this.pos_profile.posa_enable_fs_payments) {
             this.fapi_login();
-            if (this.pos_profile.company == 'Pour Tous Purchasing Service' || this.pos_profile.company == 'Pour Tous Canteen')
+            if (this.pos_profile.company == 'Pour Tous Purchasing Service')
               this.icici_pos_checkStatus();
           }
           if (this.pos_profile.posa_input_qty && this.pos_profile.posa_input_weighing_scale) {

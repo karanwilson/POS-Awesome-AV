@@ -2377,6 +2377,31 @@ export default {
           }
 
 
+          else if (this.pos_profile.company == 'Pour Tous Canteen') {
+            if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
+              if (this.customer_group == "Aurocard Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "Aurocard"
+                );
+                this.aurocard = true;
+              }
+
+              else if (this.customer_group == "UPI Payments") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "UPI"
+                );
+                this.upi = true;
+              }
+
+              else {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.default == 1
+                );
+              }
+            }
+          }
+
+
           else if (this.pos_profile.company == 'Auroville Bakery' ||
                     this.pos_profile.company == 'AV Bakery Cafe') {
             if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
