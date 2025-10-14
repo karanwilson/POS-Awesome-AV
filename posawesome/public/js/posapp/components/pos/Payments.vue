@@ -1132,69 +1132,105 @@ export default {
         console.log("verify_invoice_status: ", verify_invoice_status);
       }
 
-      for (payment of this.invoice_doc.payments) {
-        console.log("Mode of Payment: ", payment.mode_of_payment);
-        if (payment.amount !== 0) { // if < 0 then it is a return transaction
-          payment.amount = flt(payment.amount, this.currency_precision);
-          console.log("payment.amount", payment.amount);
-          if (payment.mode_of_payment === "FS") {
-            const verify_fs_payment = await this.verify_fs_payment();
-            console.log("verify_fs_payment: ", verify_fs_payment);
-            const fs_payment_response = await this.make_fs_payment(payment.amount);
-            console.log("fs_payment_response: ", fs_payment_response);
-            break;
-          }
-          else if (payment.mode_of_payment === "Aurocard") {
-            const aurocard_payment_response = await this.make_aurocard_payment();
-            console.log("aurocard_payment_response: ", aurocard_payment_response);
-            break;
-          }
-          else if (payment.mode_of_payment === "UPI") {
-            const upi_payment_response = await this.make_upi_payment();
-            console.log("upi_payment_response: ", upi_payment_response);
-            break;
-          }
-          // Temporary function - to be merged with the UPI function above
-          else if (payment.mode_of_payment === "ICICI UPI") {
-            const tran_type = 16;
-            const tip_amount = 0;
-            this.print_upi = print; // for passing print option to the UPI payment flow
-            const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
-            console.log("upi_payment_response: ", upi_payment_response);
-            break;
-          }
-          else if (payment.mode_of_payment === "RuPay") {
-            const tran_type = 1;
-            const tip_amount = 0;
-            this.print_upi = print; // for passing print option to the UPI payment flow
-            const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
-            console.log("upi_payment_response: ", upi_payment_response);
-            break;
-          }
-          else if (payment.mode_of_payment === "Cards") {
-            const tran_type = 1;
-            const tip_amount = 0;
-            this.print_upi = print; // for passing print option to the UPI payment flow
-            const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
-            console.log("upi_payment_response: ", upi_payment_response);
-            break;
-          }
-          else if (payment.mode_of_payment === "Debit Card") {
-            const tran_type = 1;
-            const tip_amount = 0;
-            this.print_upi = print; // for passing print option to the UPI payment flow
-            const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
-            console.log("upi_payment_response: ", upi_payment_response);
-            break;
-          }
-          else if (payment.mode_of_payment === "Razorpay") {
-            rzp_amount_paisa = payment.amount * 100; // convert to paisa, as Razorpay only accept payment amounts in paisa.
-            const rzp_payment_response  = await this.make_rzp_payment(rzp_amount_paisa);
-            console.log("rzp_payment_response: ", rzp_payment_response);
-            break;
+      if (this.pos_profile.company == 'Pour Tous Purchasing Service') {
+        for (payment of this.invoice_doc.payments) {
+          console.log("Mode of Payment: ", payment.mode_of_payment);
+          if (payment.amount !== 0) { // if < 0 then it is a return transaction
+            payment.amount = flt(payment.amount, this.currency_precision);
+            console.log("payment.amount", payment.amount);
+            if (payment.mode_of_payment === "FS") {
+              const verify_fs_payment = await this.verify_fs_payment();
+              console.log("verify_fs_payment: ", verify_fs_payment);
+              const fs_payment_response = await this.make_fs_payment(payment.amount);
+              console.log("fs_payment_response: ", fs_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "Aurocard") {
+              const aurocard_payment_response = await this.make_aurocard_payment();
+              console.log("aurocard_payment_response: ", aurocard_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "UPI") {
+              const upi_payment_response = await this.make_upi_payment();
+              console.log("upi_payment_response: ", upi_payment_response);
+              break;
+            }
+            // Temporary function - to be merged with the UPI function above
+            else if (payment.mode_of_payment === "ICICI UPI") {
+              const tran_type = 16;
+              const tip_amount = 0;
+              this.print_upi = print; // for passing print option to the UPI payment flow
+              const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
+              console.log("upi_payment_response: ", upi_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "RuPay") {
+              const tran_type = 1;
+              const tip_amount = 0;
+              this.print_upi = print; // for passing print option to the UPI payment flow
+              const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
+              console.log("upi_payment_response: ", upi_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "Cards") {
+              const tran_type = 1;
+              const tip_amount = 0;
+              this.print_upi = print; // for passing print option to the UPI payment flow
+              const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
+              console.log("upi_payment_response: ", upi_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "Debit Card") {
+              const tran_type = 1;
+              const tip_amount = 0;
+              this.print_upi = print; // for passing print option to the UPI payment flow
+              const upi_payment_response = await this.make_icici_upi_payment(tran_type, payment.amount, tip_amount);
+              console.log("upi_payment_response: ", upi_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "Razorpay") {
+              rzp_amount_paisa = payment.amount * 100; // convert to paisa, as Razorpay only accept payment amounts in paisa.
+              const rzp_payment_response  = await this.make_rzp_payment(rzp_amount_paisa);
+              console.log("rzp_payment_response: ", rzp_payment_response);
+              break;
+            }
           }
         }
       }
+
+      else {
+        for (payment of this.invoice_doc.payments) {
+          console.log("Mode of Payment: ", payment.mode_of_payment);
+          if (payment.amount !== 0) { // if < 0 then it is a return transaction
+            payment.amount = flt(payment.amount, this.currency_precision);
+            console.log("payment.amount", payment.amount);
+            if (payment.mode_of_payment === "FS") {
+              const verify_fs_payment = await this.verify_fs_payment();
+              console.log("verify_fs_payment: ", verify_fs_payment);
+              const fs_payment_response = await this.make_fs_payment(payment.amount);
+              console.log("fs_payment_response: ", fs_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "Aurocard") {
+              const aurocard_payment_response = await this.make_aurocard_payment();
+              console.log("aurocard_payment_response: ", aurocard_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "UPI") {
+              const upi_payment_response = await this.make_upi_payment();
+              console.log("upi_payment_response: ", upi_payment_response);
+              break;
+            }
+            else if (payment.mode_of_payment === "Razorpay") {
+              rzp_amount_paisa = payment.amount * 100; // convert to paisa, as Razorpay only accept payment amounts in paisa.
+              const rzp_payment_response  = await this.make_rzp_payment(rzp_amount_paisa);
+              console.log("rzp_payment_response: ", rzp_payment_response);
+              break;
+            }
+          }
+        }
+      }
+
 
       const submit_status = await this.submit_invoice(print);
       console.log(submit_status);
