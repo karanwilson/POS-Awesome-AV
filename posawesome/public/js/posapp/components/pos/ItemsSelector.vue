@@ -916,12 +916,6 @@ export default {
     evntBus.$on('scale_port_promise', (scale_port_promise) => {     // $emit (receive the scale_port_promise object) from invoice.vue
       this.scale_port_promise = scale_port_promise;
     });
-    evntBus.$on('select_items', () => {     // $emit from Customer.vue
-      this.$refs.debounce_search.focus();
-    });
-    evntBus.$on('scale_port_promise', (scale_port_promise) => {     // $emit (receive the scale_port_promise object) from invoice.vue
-      this.scale_port_promise = scale_port_promise;
-    });
     evntBus.$on("update_cur_items_details", () => {
       this.update_cur_items_details();
     });

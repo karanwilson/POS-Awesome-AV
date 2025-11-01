@@ -1080,25 +1080,26 @@ def submit_invoice(invoice, data):
                 },
             )
     else:
-        try:
-            invoice_doc.submit()
-        except Exception as err:
-            return {
-                "error": err,
-                "name": invoice_doc.name,
-                "doctype": invoice_doc.doctype,
-                "status": invoice_doc.docstatus
-            }
+        invoice_doc.submit()
+        # try:
+        #     invoice_doc.submit()
+        # except Exception as err:
+        #     return {
+        #         "error": err,
+        #         "name": invoice_doc.name,
+        #         "doctype": invoice_doc.doctype,
+        #         "status": invoice_doc.docstatus
+        #     }
 
         redeeming_customer_credit(
             invoice_doc, data, is_payment_entry, total_cash, cash_account, payments
         )
 
-    return {
-        "name": invoice_doc.name,
-        "doctype": invoice_doc.doctype,
-        "status": invoice_doc.docstatus
-    }
+        return {
+            "name": invoice_doc.name,
+            "doctype": invoice_doc.doctype,
+            "status": invoice_doc.docstatus
+        }
 
 
 def set_batch_nos_for_bundels(doc, warehouse_field, throw=False):
