@@ -1513,7 +1513,7 @@ export default {
       //this.items.forEach((item) => {
         //sum += flt(item.qty) * flt(item.rate);
       //});
-      if (this.invoice_doc.is_return == 1) {
+      if (this.invoice_doc.is_return == 1 && !this.container_return) {
         console.log('this.invoice_doc.is_return: ', this.invoice_doc.is_return);
         this.items.forEach((item) => {
           sum += flt(item.amount);
