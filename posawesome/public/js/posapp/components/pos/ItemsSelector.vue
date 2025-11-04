@@ -249,6 +249,7 @@ export default {
       if (search) {
         sr = search;
       }
+      console.log("sr: ", sr);
       if (vm.item_group != "ALL") {
         gr = vm.item_group.toLowerCase();
       }
@@ -291,7 +292,8 @@ export default {
               }
             }
             if (vm.pos_profile.pose_use_limit_search) {
-              vm.enter_event();
+              //vm.enter_event();
+              if (sr) vm.enter_qty();
             }
           }
         },
