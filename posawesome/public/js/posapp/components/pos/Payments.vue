@@ -1907,11 +1907,15 @@ export default {
             if (r.message) {
               console.log('r.message: ', r.message);
               if (r.message["ResponseCode"] == "00" && r.message['ir_status'] == "Completed") {
-                vm.invoice_doc.custom_upi_transfer_status = r.message["custom_upi_transfer_status"];
+                vm.invoice_doc.custom_pos_transfer_status = r.message["custom_pos_transfer_status"];
+
+                if (tran_type = 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
+                else if (tran_type = 1) vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+
                 vm.invoice_doc.remarks = JSON.stringify(r.message); // record the json in the remarks string
 
                 vm.icici_upi_dialog = false;
-                resolve(r.message["custom_upi_transfer_status"]);
+                resolve(r.message["custom_pos_transfer_status"]);
               }
               else if (r.message["ResponseCode"] == "00" || r.message["ResponseDesc"] == "Success") {
                 // setTimeout(() => {
@@ -1934,12 +1938,12 @@ export default {
                   callback: function (r) {
                     if (r.message) {
                       console.log('r.message: ', r.message);
-                      if (r.message['custom_upi_transfer_status'] == "SUCCESS") {
-                        vm2.invoice_doc.custom_upi_transfer_status = r.message["custom_upi_transfer_status"];
+                      if (r.message['custom_pos_transfer_status'] == "SUCCESS") {
+                        vm2.invoice_doc.custom_pos_transfer_status = r.message["custom_pos_transfer_status"];
                         vm2.invoice_doc.remarks = JSON.stringify(r.message); // record the json in the remarks string
 
                         vm2.icici_upi_dialog = false;
-                        resolve(r.message["custom_upi_transfer_status"]);
+                        resolve(r.message["custom_pos_transfer_status"]);
                       }
                     }
                   }
@@ -1976,13 +1980,17 @@ export default {
           if (r.message) {
           console.log("r.message: ", r.message);
             if (r.message['ResponseCode'] == '00' || r.message["ResponseDesc"] ==  "SUCCESS" || r.message["ResponseDesc"] == "Approved or completed successfully") {
-              vm.invoice_doc.custom_upi_transfer_status = r.message["custom_upi_transfer_status"];
+              vm.invoice_doc.custom_pos_transfer_status = r.message["custom_pos_transfer_status"];
+
+              if (vm.tran_type = 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
+              else if (vm.tran_type = 1) vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+
               vm.invoice_doc.remarks = JSON.stringify(r.message); // record the json in the remarks string
 
               vm.icici_upi_dialog = false;
 
               evntBus.$emit("show_mesage", {
-                text: __(`UPI Transaction ResponseCode: {0}, ResponseDesc: {1}`, [
+                text: __(`POS Transaction ResponseCode: {0}, ResponseDesc: {1}`, [
                   r.message["ResponseCode"],
                   r.message["ResponseDesc"]
                 ]),
@@ -2024,7 +2032,7 @@ export default {
           callback: function (r) {
             if (r.message) {
               evntBus.$emit("show_mesage", {
-                text: __(`UPI Transaction cancelled. ResponseCode: {0}, ResponseDesc: {1}`, [
+                text: __(`POS Transaction cancelled. ResponseCode: {0}, ResponseDesc: {1}`, [
                   r.message["RspCode"],
                   r.message["RspDesc"]
                 ]),
