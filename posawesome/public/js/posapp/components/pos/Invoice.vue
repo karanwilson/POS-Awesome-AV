@@ -1607,7 +1607,7 @@ export default {
           if (r.message) {
             if (r.message['Result'] == 'OK') {
               vm.balance_available = parseFloat(r.message['maxAmount']);
-              console.log('vm.balance_available: ', vm.balance_available);
+              //console.log('vm.balance_available: ', vm.balance_available);
               if (vm.balance_available > 0) {
                 vm.dynamic_fs_balance_color = 'success';
                 vm.dynamic_fs_balance_icon = 'mdi-bank';
