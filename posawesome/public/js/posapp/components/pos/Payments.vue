@@ -819,7 +819,7 @@
     </v-card>
 
     <div>
-      <v-dialog v-model="icici_upi_dialog" max-width="400px">
+      <v-dialog v-model="icici_upi_dialog" max-width="600px">
         <v-card>
           <v-card-title>
             <span class="headline primary--text">{{
@@ -872,6 +872,10 @@
             <v-spacer></v-spacer>
             <v-btn color="error" dark @click="cancel_upi_payment">{{
               __("Cancel UPI")
+            }}</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="warning" dark @click="bypass_dynamic_qr">{{
+              __("Bypass Dynamic QR")
             }}</v-btn>
           </v-card-actions>
         </v-card>
@@ -1132,7 +1136,7 @@ export default {
         console.log("verify_invoice_status: ", verify_invoice_status);
       }
 
-      if (this.pos_profile.company == 'Pour Tous Purchasing Service') {
+      if (this.pos_profile.posa_enable_icici_pos_payments) {
         for (payment of this.invoice_doc.payments) {
           console.log("Mode of Payment: ", payment.mode_of_payment);
           if (payment.amount !== 0) { // if < 0 then it is a return transaction
@@ -1383,7 +1387,7 @@ export default {
         else payment.amount = 0;
       });
 
-      if (this.pos_profile.company == 'Pour Tous Purchasing Service') {
+      if (this.pos_profile.posa_enable_icici_pos_payments) {
         if (mop == 'Aurocard')
           {
             this.aurocard = true;
@@ -1909,8 +1913,15 @@ export default {
               if (r.message["ResponseCode"] == "00" && r.message['ir_status'] == "Completed") {
                 vm.invoice_doc.custom_pos_transfer_status = r.message["custom_pos_transfer_status"];
 
-                if (tran_type = 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
-                else if (tran_type = 1) vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+                // if the TranType gets changed in the checkCallbackStatus response from ICICI, it gets recorded here
+                if ("TranType" in r.message) {
+                  if (r.message["TranType"] == "UPI") vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
+                  else if (r.message["TranType"] == "Sale") vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+                }
+                else {
+                  if (tran_type == 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
+                  else if (tran_type == 1) vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+                }
 
                 vm.invoice_doc.remarks = JSON.stringify(r.message); // record the json in the remarks string
 
@@ -1921,10 +1932,14 @@ export default {
                 // setTimeout(() => {
                 //   this.upi_timeout = true;
                 // }, 40000);
-
                 vm.dynamic_upi_online_color = "success";
                 vm.erp_tran_id = r.message["erp_tran_id"];
-                vm.tran_type = tran_type;
+
+                if ("TranType" in r.message) {
+                  if (r.message["TranType"] == "UPI") vm.tran_type = 16;
+                  else if (r.message["TranType"] == "Sale") vm.tran_type = 1;
+                }
+                else vm.tran_type = tran_type;
                 //const txn_status = await vm.get_upi_confirmation(r.message["erp_tran_id"], tran_type);
                 // check txn_status for Success or Fail
                 //resolve(txn_status);
@@ -1978,16 +1993,20 @@ export default {
         async: false,
         callback: async function (r) {
           if (r.message) {
-          console.log("r.message: ", r.message);
+            console.log("r.message: ", r.message);
             if (r.message['ResponseCode'] == '00' || r.message["ResponseDesc"] ==  "SUCCESS" || r.message["ResponseDesc"] == "Approved or completed successfully") {
               vm.invoice_doc.custom_pos_transfer_status = r.message["custom_pos_transfer_status"];
 
-              if (vm.tran_type = 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
-              else if (vm.tran_type = 1) vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+              if ("TranType" in r.message) {
+                if (r.message["TranType"] == "UPI") vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
+                else if (r.message["TranType"] == "Sale") vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+              }
+              else {
+                if (tran_type == 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
+                else if (tran_type == 1) vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+              }
 
               vm.invoice_doc.remarks = JSON.stringify(r.message); // record the json in the remarks string
-
-              vm.icici_upi_dialog = false;
 
               evntBus.$emit("show_mesage", {
                 text: __(`POS Transaction ResponseCode: {0}, ResponseDesc: {1}`, [
@@ -1996,6 +2015,8 @@ export default {
                 ]),
                 color: "success",
               });
+
+              vm.icici_upi_dialog = false;
 
               const submit_status = await vm.submit_invoice(vm.print_upi);
               console.log(submit_status);
@@ -2054,6 +2075,23 @@ export default {
       else {
         vm.icici_upi_dialog = false;
       }
+    },
+
+
+    async bypass_dynamic_qr() {
+      this.invoice_doc.remarks = "Bypassed Dynamic QR";
+
+      this.icici_upi_dialog = false;
+
+      evntBus.$emit("show_mesage", {
+        text: __(`Bypassed Dynamic QR for POS Transaction`),
+        color: "info",
+      });
+
+      const submit_status = await this.submit_invoice(this.print_upi);
+      console.log(submit_status);
+
+      this.after_submit()
     },
 
 
@@ -2456,11 +2494,26 @@ export default {
                 this.aurocard = true;
               }
 
+              else if (this.customer_group == "UPI Payments" && this.pos_profile.posa_enable_icici_pos_payments) {
+                default_payment = this.invoice_doc.payments.find(
+                  //(payment) => payment.mode_of_payment == "UPI"
+                  (payment) => payment.mode_of_payment == "ICICI UPI"
+                );
+                this.upi = true;
+              }
+
               else if (this.customer_group == "UPI Payments") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "UPI"
+                  //(payment) => payment.mode_of_payment == "ICICI UPI"
                 );
                 this.upi = true;
+              }
+
+              else if (this.customer_group == "MOP RuPay") {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "RuPay"
+                );
               }
 
               else if (this.customer_group == "Card Payments") {

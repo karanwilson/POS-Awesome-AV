@@ -24,7 +24,7 @@
       <v-spacer></v-spacer>
 
       <v-col
-        v-if="pos_profile.posa_enable_fs_payments && (pos_profile.company == 'Pour Tous Purchasing Service')"
+        v-if="pos_profile.posa_enable_icici_pos_payments"
         cols="1"
         align="center"
       >
@@ -173,7 +173,7 @@
         </v-list-item-group>
       </v-list>
     </v-navigation-drawer>
-    <v-snackbar v-model="snack" :timeout="5000" :color="snackColor" top right>
+    <v-snackbar v-model="snack" :timeout="3000" :color="snackColor" top right>
       {{ snackText }}
     </v-snackbar>
     <v-dialog v-model="freeze" persistent max-width="290">
@@ -410,7 +410,7 @@ export default {
           //this.fs_online = true;
           if (this.pos_profile.posa_enable_fs_payments) {
             this.fapi_login();
-            if (this.pos_profile.company == 'Pour Tous Purchasing Service')
+            if (this.pos_profile.posa_enable_icici_pos_payments)
               this.icici_pos_checkStatus();
           }
           if (this.pos_profile.posa_input_qty && this.pos_profile.posa_input_weighing_scale) {
