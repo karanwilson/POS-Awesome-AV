@@ -1917,6 +1917,8 @@ export default {
                 if ("TranType" in r.message) {
                   if (r.message["TranType"] == "UPI") vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
                   else if (r.message["TranType"] == "Sale") vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+                  else if (tran_type == 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
+                  else if (tran_type == 1) vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
                 }
                 else {
                   if (tran_type == 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
@@ -2000,6 +2002,8 @@ export default {
               if ("TranType" in r.message) {
                 if (r.message["TranType"] == "UPI") vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];
                 else if (r.message["TranType"] == "Sale") vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
+                else if (tran_type == 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"]; // in case no match above
+                else if (tran_type == 1) vm.invoice_doc.custom_card_transaction_id = r.message["TranId"];
               }
               else {
                 if (tran_type == 16) vm.invoice_doc.custom_upi_transaction_id = r.message["TranId"];

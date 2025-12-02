@@ -746,7 +746,7 @@ def update_invoice(data, container_return=None):
 
         chargeable_mop = None
         customer_group = get_customer_group(invoice_doc.customer)
-        if customer_group == "MOP Cards":
+        if customer_group in ("MOP Cards", "Card Payments"):
             chargeable_mop = "Cards"
         # elif customer_group == "MOP Debit Card":
         #     chargeable_mop = "Debit Card"
