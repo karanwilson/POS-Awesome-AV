@@ -2489,7 +2489,7 @@ export default {
 
 
           else if (this.pos_profile.company == 'Auroville Bakery' ||
-                    this.pos_profile.company == 'AV Bakery Cafe') {
+                    this.pos_profile.company == 'AV Bakery Cafe' || 'AV Bakery Cafe Townhall') {
             if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
               if (this.customer_group == "Aurocard Payments") {
                 default_payment = this.invoice_doc.payments.find(
@@ -2547,7 +2547,7 @@ export default {
           }
 
 
-          else if (this.pos_profile.company == 'AV Bakery Cafe Townhall') {
+          /* else if (this.pos_profile.company == 'AV Bakery Cafe Townhall') {
             if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
               if (this.customer_group == "Aurocard Payments") {
                 default_payment = this.invoice_doc.payments.find(
@@ -2562,7 +2562,7 @@ export default {
                 );
               }
             }
-          }
+          } */
 
           // In case of PTDC the vairable "default_payment" below is not set
           //if (default_payment && !invoice_doc.is_return) {
