@@ -19,7 +19,7 @@
       </v-card>
     </v-dialog>
     <v-card
-      style="max-height: 70vh; height: 70vh"
+      style="max-height: 75vh; height: 75vh"
       class="cards my-0 py-0 mt-3 grey lighten-5"
     >
       <v-row align="center" class="items px-2 py-1">
@@ -1444,7 +1444,7 @@ export default {
       discount_percentage_offer_name: null,
       invoiceTypes: ["Invoice", "Order"],
       invoiceType: "Invoice",
-      itemsPerPage: 1000,
+      itemsPerPage: 100,
       expanded: [],
       singleExpand: true,
       cancel_dialog: false,
