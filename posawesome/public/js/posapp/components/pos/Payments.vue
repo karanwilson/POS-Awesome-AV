@@ -1284,7 +1284,8 @@ export default {
         data["remarks"] = this.order_remarks_text;
         data["is_donation"] = this.is_donation;
 
-        //console.log("this.pos_profile.posa_allow_credit_sale: ", this.pos_profile.posa_allow_credit_sale);
+        // console.log("this.pos_profile.posa_allow_credit_sale: ", this.pos_profile.posa_allow_credit_sale);
+        // console.log("this.is_credit_sale: ", this.is_credit_sale);
         if ((this.pos_profile.company != 'Pour Tous Distribution Center') &&
               (totalPayedAmount == 0 && this.redeemed_customer_credit == 0 && this.is_credit_sale == 0 && this.invoiceType != "Order")) {
           evntBus.$emit("show_mesage", {
@@ -2385,6 +2386,9 @@ export default {
   mounted: function () {
     this.$nextTick(function () {
       evntBus.$on("send_invoice_doc_payment", async (invoice_doc) => {
+        this.is_credit_sale = 0;
+        this.is_write_off_change = 0;
+
         this.invoice_doc = invoice_doc;
 
         if (this.pos_profile.company != 'Pour Tous Distribution Center') {
@@ -2413,6 +2417,7 @@ export default {
         }
 
         else {
+          //console.log("this.customer_group: ", this.customer_group);
           let default_payment = "";
 
           //if (!this.pos_profile.posa_enable_fs_payments)
@@ -2457,6 +2462,7 @@ export default {
 
               else if (this.customer_group == "Credit Customers") {
                 this.is_credit_sale = 1;
+                console.log("post this.is_credit_sale: ", this.is_credit_sale);
               }
 
               else {
@@ -2600,9 +2606,6 @@ export default {
             this.staff_member = true;
           else this.staff_member = false;
         }
-
-        this.is_credit_sale = 0;
-        this.is_write_off_change = 0;
 
         // In case of PTDC (with FS payments disabled), is_cashback is disabled in order to create credit-notes
         //if ((this.pos_profile.company == 'Pour Tous Distribution Center') && this.invoice_doc.is_return)
