@@ -1874,7 +1874,8 @@ export default {
     make_upi_payment() {
       return new Promise((resolve, reject) => {
         if (this.upi_trans_id) {
-          if (this.invoice_doc.is_return && this.remarks)
+          //if (this.invoice_doc.is_return && this.remarks)
+          if (this.remarks)
             this.invoice_doc.remarks += "\n" + "UPI Transaction ID: " + this.upi_trans_id;
           else
             this.invoice_doc.remarks = "UPI Transaction ID: " + this.upi_trans_id;
@@ -2454,6 +2455,10 @@ export default {
                 );
               }
 
+              else if (this.customer_group == "Credit Customers") {
+                this.is_credit_sale = 1;
+              }
+
               else {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.default == 1
@@ -2489,7 +2494,7 @@ export default {
 
 
           else if (this.pos_profile.company == 'Auroville Bakery' ||
-                    this.pos_profile.company == 'AV Bakery Cafe' || 'AV Bakery Cafe Townhall') {
+                    this.pos_profile.company == 'AV Bakery Cafe' || this.pos_profile.company == 'AV Bakery Cafe Townhall') {
             if (this.invoice_doc.grand_total > available_customer_credit || invoice_doc.is_return) {
               if (this.customer_group == "Aurocard Payments") {
                 default_payment = this.invoice_doc.payments.find(

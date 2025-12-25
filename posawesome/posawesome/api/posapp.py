@@ -34,6 +34,8 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
 from frappe.utils.caching import redis_cache
 #import os
 
+from payments.payment_gateways.doctype.fs_settings.fs_settings import refund_fs_payments
+
 
 @frappe.whitelist()
 def pourtous_settings():
@@ -1080,26 +1082,44 @@ def submit_invoice(invoice, data):
                 },
             )
     else:
-        invoice_doc.submit()
-        # try:
-        #     invoice_doc.submit()
-        # except Exception as err:
-        #     return {
-        #         "error": err,
-        #         "name": invoice_doc.name,
-        #         "doctype": invoice_doc.doctype,
-        #         "status": invoice_doc.docstatus
-        #     }
+        #invoice_doc.submit()
+        try:
+            invoice_doc.submit()
+        except Exception as err:
+            frappe.msgprint(str(err))
+            # In case of FS Invoice: check if payment was received and refund if paid
+            if invoice_doc.custom_fs_account_number:
+                # check the integration request status
+                integration_request_existing = frappe.get_value("Integration Request", {"reference_docname": invoice_doc.name}, "name")
+                if integration_request_existing:
+                    integration_request = frappe.get_doc("Integration Request", integration_request_existing)
+                    if integration_request.status == "Completed":
+                        refund_status = refund_fs_payments(invoice_doc, None)
+                        if refund_status == "Completed":
+                            # changing the integration_request.status above to "Cancelled", after a new one is created for refund.
+                            integration_request.status = "Cancelled"
+                            integration_request.save(ignore_permissions=True)
+                            frappe.db.commit()
+                            frappe.db.set_value(invoice_doc.doctype, invoice_doc.name, "custom_fs_transfer_status", "Refunded: Invoice not submitted")
 
-        redeeming_customer_credit(
-            invoice_doc, data, is_payment_entry, total_cash, cash_account, payments
-        )
+            raise err
+            # return {
+            #     "error": err,
+            #     "name": invoice_doc.name,
+            #     "doctype": invoice_doc.doctype,
+            #     "status": invoice_doc.docstatus
+            # }
 
-        return {
-            "name": invoice_doc.name,
-            "doctype": invoice_doc.doctype,
-            "status": invoice_doc.docstatus
-        }
+        else:
+            redeeming_customer_credit(
+                invoice_doc, data, is_payment_entry, total_cash, cash_account, payments
+            )
+
+            return {
+                "name": invoice_doc.name,
+                "doctype": invoice_doc.doctype,
+                "status": invoice_doc.docstatus
+            }
 
 
 def set_batch_nos_for_bundels(doc, warehouse_field, throw=False):
