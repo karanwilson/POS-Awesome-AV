@@ -2462,7 +2462,7 @@ export default {
 
               else if (this.customer_group == "Credit Customers") {
                 this.is_credit_sale = 1;
-                console.log("post this.is_credit_sale: ", this.is_credit_sale);
+                console.log("this.is_credit_sale: ", this.is_credit_sale);
               }
 
               else {
