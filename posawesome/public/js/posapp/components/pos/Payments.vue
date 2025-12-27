@@ -1770,7 +1770,18 @@ export default {
         }
 
         const vm = this;
-        frappe.call({
+        if (vm.invoice_doc.custom_fs_account_number) {
+          console.log("Customer FS Account Number: ", vm.invoice_doc.custom_fs_account_number);
+          resolve("OK");
+        }
+        else {
+          evntBus.$emit('show_mesage', {
+            text: "FS Account not set",
+            color: "error",
+          });
+          reject("FS Account not set");
+        }
+        /* frappe.call({
           method: 'posawesome.posawesome.api.posapp.get_customer_fs_acc_number',
           args: {customer: vm.invoice_doc.customer},
           async: false,
@@ -1788,7 +1799,7 @@ export default {
               reject("FS Account not set");
             }
           }
-        })
+        }) */
       })
     },
 
@@ -2394,14 +2405,16 @@ export default {
         if (this.pos_profile.company != 'Pour Tous Distribution Center') {
           const vm = this;
           frappe.call({
-            method: 'posawesome.posawesome.api.posapp.get_customer_group',
+            method: 'posawesome.posawesome.api.posapp.get_customer_group_and_fs_account',
             args: {
               customer: invoice_doc.customer
             },
             async: false,
             callback: (r) => {
               if (r.message) {
-                vm.customer_group = r.message;
+                vm.customer_group = r.message.custom_customer_group;
+                vm.invoice_doc.custom_customer_group = r.message.custom_customer_group;
+                vm.invoice_doc.custom_fs_account_number = r.message.custom_fs_account_number;
               }
             }
           })

@@ -747,10 +747,10 @@ def update_invoice(data, container_return=None):
         #frappe.throw(str(invoice_doc.as_dict()))
 
         chargeable_mop = None
-        customer_group = get_customer_group(invoice_doc.customer)
-        if customer_group in ("MOP Cards", "Card Payments"):
+        res = get_customer_group_and_fs_account(invoice_doc.customer)
+        if res.get("custom_customer_group") in ("MOP Cards", "Card Payments"):
             chargeable_mop = "Cards"
-        # elif customer_group == "MOP Debit Card":
+        # elif res.custom_customer_group == "MOP Debit Card":
         #     chargeable_mop = "Debit Card"
         if chargeable_mop:
             return update_invoice_transaction_fee(mop=chargeable_mop, remove_transaction_fee='0', invoice_name=None, invoice_doc=invoice_doc)
@@ -1374,16 +1374,20 @@ def get_draft_invoices(pos_opening_shift):
 
 
 @frappe.whitelist()
-def get_customer_fs_acc_number(customer):
-    return frappe.get_value("Customer", customer, "custom_fs_account_number")
+def get_customer_group_and_fs_account(customer):
+    return {
+        "custom_fs_account_number": frappe.get_value("Customer", customer, "custom_fs_account_number"),
+        "custom_customer_group": frappe.get_value("Customer", customer, "customer_group")
+    }
+    #return frappe.get_value("Customer", customer, "custom_fs_account_number")
 
 @frappe.whitelist()
 def get_customer_type(customer):
     return frappe.get_value("Customer", customer, "customer_type")
 
-@frappe.whitelist()
-def get_customer_group(customer):
-    return frappe.get_value("Customer", customer, "customer_group")
+# @frappe.whitelist()
+# def get_customer_group(customer):
+#     return frappe.get_value("Customer", customer, "customer_group")
 
 @frappe.whitelist()
 def pending_fs_bills_query(customer, company):
