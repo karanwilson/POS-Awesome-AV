@@ -1040,6 +1040,7 @@ def submit_invoice(invoice, data):
     invoice_doc.flags.ignore_permissions = True
     frappe.flags.ignore_account_permission = True
     invoice_doc.posa_is_printed = 1
+    invoice_doc.title = invoice_doc.customer_name # updating the Invoice title, in case of a change in Customer during checkout
     invoice_doc.save()
 
     # the following if statement seems redundant, as data["due_date"] is not configured at the calling method in payments.vue
