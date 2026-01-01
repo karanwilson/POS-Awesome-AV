@@ -2252,6 +2252,8 @@ export default {
       doc.is_pos = 1;
       doc.ignore_pricing_rule = 1;
       doc.company = doc.company || this.pos_profile.company;
+      doc.cost_center = doc.cost_center || this.pos_profile.cost_center || null; // Adding the accounting dimensions
+      doc.branch = doc.branch || this.pos_profile.branch || null; // Adding the accounting dimensions
       doc.pos_profile = doc.pos_profile || this.pos_profile.name;
       doc.campaign = doc.campaign || this.pos_profile.campaign;
       doc.currency = doc.currency || this.pos_profile.currency;
