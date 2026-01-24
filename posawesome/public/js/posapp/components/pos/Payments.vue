@@ -1131,6 +1131,25 @@ export default {
         return;
       }
 
+      // repeat this AJAX call in case the "Customer Group" is not set; it will also set the FS account number if available in the Customer record
+      if (!this.invoice_doc.custom_customer_group && this.pos_profile.company != 'Pour Tous Distribution Center') {
+        const vm = this;
+        frappe.call({
+          method: 'posawesome.posawesome.api.posapp.get_customer_group_and_fs_account',
+          args: {
+            customer: this.invoice_doc.customer
+          },
+          async: false,
+          callback: (r) => {
+            if (r.message) {
+              vm.customer_group = r.message.custom_customer_group;
+              vm.invoice_doc.custom_customer_group = r.message.custom_customer_group;
+              vm.invoice_doc.custom_fs_account_number = r.message.custom_fs_account_number;
+            }
+          }
+        })
+      }
+
       if (this.invoice_doc.is_return) {
         const verify_invoice_status = await this.verify_invoice_status();
         console.log("verify_invoice_status: ", verify_invoice_status);
