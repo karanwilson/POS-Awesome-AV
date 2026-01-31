@@ -2587,6 +2587,11 @@ export default {
                 );
               }
 
+              else if (this.customer_group == "Credit Customers") {
+                this.is_credit_sale = 1;
+                console.log("this.is_credit_sale: ", this.is_credit_sale);
+              }
+
               else {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.default == 1
