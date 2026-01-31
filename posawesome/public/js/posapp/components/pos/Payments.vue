@@ -2466,10 +2466,16 @@ export default {
                 this.aurocard = true;
               }
 
+              else if (this.customer_group == "UPI Payments" && this.pos_profile.posa_enable_icici_pos_payments) {
+                default_payment = this.invoice_doc.payments.find(
+                  (payment) => payment.mode_of_payment == "ICICI UPI"
+                );
+                this.upi = true;
+              }
+
               else if (this.customer_group == "UPI Payments") {
                 default_payment = this.invoice_doc.payments.find(
-                  //(payment) => payment.mode_of_payment == "UPI"
-                  (payment) => payment.mode_of_payment == "ICICI UPI"
+                  (payment) => payment.mode_of_payment == "UPI"
                 );
                 this.upi = true;
               }
@@ -2486,11 +2492,11 @@ export default {
                 );
               }
 
-              else if (this.customer_group == "MOP Debit Card") {
+              /* else if (this.customer_group == "MOP Debit Card") {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "Debit Card"
                 );
-              }
+              } */
 
               else if (this.customer_group == "Credit Customers") {
                 this.is_credit_sale = 1;
@@ -2579,6 +2585,11 @@ export default {
                 default_payment = this.invoice_doc.payments.find(
                   (payment) => payment.mode_of_payment == "NEFT"
                 );
+              }
+
+              else if (this.customer_group == "Credit Customers") {
+                this.is_credit_sale = 1;
+                console.log("this.is_credit_sale: ", this.is_credit_sale);
               }
 
               else {
