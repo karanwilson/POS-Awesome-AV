@@ -681,16 +681,16 @@
         <v-row class="px-1 py-0" align="start" no-gutters>
           <v-col cols="6" v-if="!invoice_doc.is_return">
             <v-switch
-              v-model="staff_member"
+              v-model="staff_customer_detail"
               flat
-              :label="frappe._('Staff Member')"
+              :label="frappe._('Staff/Customer Detail')"
               class="my-0 py-0"
             ></v-switch>
           </v-col>
-          <v-col cols="6" v-if="staff_member">
+          <v-col cols="6" v-if="staff_customer_detail">
             <v-text-field
-              v-model="invoice_doc.custom_staff_member"
-              :label="frappe._('Staff Member')"
+              v-model="invoice_doc.custom_staff_customer_detail"
+              :label="frappe._('Staff/Customer Detail')"
               outlined
               dense
               hide-details
@@ -935,7 +935,7 @@ export default {
     po_date_menu: false,
     transaction_date_menu: false, // in case posting-date is later than the transaction-date
     add_transaction_date: false, // in case posting-date is later than the transaction-date
-    staff_member: false, // in case of accounts shared by a group
+    staff_customer_detail: false, // in case of accounts shared by a group
     addresses: [],
     sales_persons: [],
     sales_person: "",
@@ -1843,8 +1843,8 @@ export default {
               if (r.message) {
                 const custom_fs_transfer_status = r.message["custom_fs_transfer_status"]
                 vm.invoice_doc.custom_fs_transfer_status = custom_fs_transfer_status;
-                if (vm.invoice_doc.is_return && vm.remarks)
-                  vm.invoice_doc.remarks += "\n" + r.message["remarks"]; // in case of return-remarks
+                if (vm.remarks)
+                  vm.invoice_doc.remarks += "\n\n" + r.message["remarks"]; // in case of remarks
                 else if (r.message["remarks"] != "Null") // In case of "Insufficient Funds"
                   vm.invoice_doc.remarks = r.message["remarks"];
 
@@ -2645,9 +2645,9 @@ export default {
             this.add_transaction_date = true;
           else this.add_transaction_date = false;
 
-          if (this.invoice_doc.custom_staff_member)
-            this.staff_member = true;
-          else this.staff_member = false;
+          if (this.invoice_doc.custom_staff_customer_detail)
+            this.staff_customer_detail = true;
+          else this.staff_customer_detail = false;
         }
 
         // In case of PTDC (with FS payments disabled), is_cashback is disabled in order to create credit-notes
