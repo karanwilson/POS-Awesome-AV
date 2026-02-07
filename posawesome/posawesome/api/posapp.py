@@ -1095,7 +1095,7 @@ def submit_invoice(invoice, data):
         except Exception as err:
             frappe.msgprint(str(err))
             # In case of FS Invoice: check if payment was received and refund if paid
-            if invoice_doc.custom_fs_account_number:
+            if invoice_doc.custom_fs_account_number and frappe.defaults.get_user_default("company") != "Pour Tous Distribution Center":
                 # check the integration request status
                 integration_request_existing = frappe.get_value("Integration Request", {"reference_docname": invoice_doc.name}, "name")
                 if integration_request_existing:
