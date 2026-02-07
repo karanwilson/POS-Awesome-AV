@@ -1041,6 +1041,12 @@ def submit_invoice(invoice, data):
     frappe.flags.ignore_account_permission = True
     invoice_doc.posa_is_printed = 1
     invoice_doc.title = invoice_doc.customer_name # updating the Invoice title, in case of a change in Customer during checkout
+
+    if frappe.defaults.get_user_default("company") in (
+		"AV Bakery Cafe", "AV Bakery Cafe Townhall"
+	):
+        invoice_doc.custom_token_number = fetch_cafe_token()
+
     invoice_doc.save()
 
     # the following if statement seems redundant, as data["due_date"] is not configured at the calling method in payments.vue
@@ -1095,7 +1101,7 @@ def submit_invoice(invoice, data):
                 if integration_request_existing:
                     integration_request = frappe.get_doc("Integration Request", integration_request_existing)
                     if integration_request.status == "Completed":
-                        refund_status = refund_fs_payments(invoice_doc, None)
+                        refund_status = refund_fs_payments(invoice_doc, method=None)
                         if refund_status == "Completed":
                             # changing the integration_request.status above to "Cancelled", after a new one is created for refund.
                             integration_request.status = "Cancelled"
@@ -1121,6 +1127,13 @@ def submit_invoice(invoice, data):
                 "doctype": invoice_doc.doctype,
                 "status": invoice_doc.docstatus
             }
+
+
+def fetch_cafe_token():
+    token_number = frappe.db.get_value("Cafe Token", "Cafe Token", "token_number")
+    frappe.db.set_value("Cafe Token", "Cafe Token", "token_number", int(token_number)+1)
+    frappe.db.commit()
+    return token_number
 
 
 def set_batch_nos_for_bundels(doc, warehouse_field, throw=False):

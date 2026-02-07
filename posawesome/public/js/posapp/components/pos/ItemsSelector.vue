@@ -385,7 +385,16 @@ export default {
     verify_input_qty(new_item) {
       return new Promise((resolve, reject) => {
         // custom_uom_int is a custom field added in Item doctype (which pulls custom_uom_int from must_be_whole_number in UOM doctype) for verifying fractional inputs
-        if (new_item.custom_uom_int == 1 && ((new_item.qty - parseInt(new_item.qty)) > 0.0000001)) {
+        if (new_item.qty > 1500 && 
+          !(this.pos_profile.owner == "iyyappan@auroville.org.in" || this.pos_profile.owner == "kumaran@pourtous-av.in" || this.pos_profile.owner == "karan.wilson@auroville.org.in" || this.pos_profile.owner == "lgastmans@gmail.com" || this.pos_profile.owner == 'Administrator')) {
+          evntBus.$emit('show_mesage', {
+            text: __(`QTY too high, please verify`),
+            color: 'error',
+          });
+          frappe.utils.play_sound('error');
+          resolve(false);
+        }
+        else if (new_item.custom_uom_int == 1 && ((new_item.qty - parseInt(new_item.qty)) > 0.0000001)) {
           evntBus.$emit('show_mesage', {
             text: __(`QTY Must be Whole Number`),
             color: 'error',
