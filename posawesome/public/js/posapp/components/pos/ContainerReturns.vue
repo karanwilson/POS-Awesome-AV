@@ -158,6 +158,7 @@ export default {
         method: "posawesome.posawesome.api.posapp.get_items",
         args: {
           pos_profile: vm.pos_profile,
+          price_list: "Returns",
           item_group: gr,
         },
         callback: function (r) {

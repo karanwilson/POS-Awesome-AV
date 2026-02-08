@@ -19,6 +19,7 @@
       hide-details
       :filter="customFilter"
       :disabled="readonly"
+      :style="{ fontSize: '20px' }"
       append-icon="mdi-plus"
       @click:append="new_customer"
       prepend-inner-icon="mdi-account-edit"

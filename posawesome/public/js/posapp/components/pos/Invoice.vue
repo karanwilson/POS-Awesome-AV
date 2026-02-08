@@ -1196,8 +1196,8 @@
     <v-card v-if="!pos_profile.posa_enable_fs_payments"
       class="cards mb-0 mt-3 py-0 grey lighten-5">
       <v-row no-gutters>
-        <v-col cols="5">
-          <v-row no-gutters class="pa-1 pt-9 pr-1">
+        <v-col cols="6">
+          <v-row no-gutters class="pa-1 pt-2 pl-0">
             <v-col cols="6" class="pa-1">
               <v-text-field
                 :value="formtFloat(total_qty)"
@@ -1291,9 +1291,10 @@
 
             <v-col cols="6" class="pa-1 mt-2">
               <v-text-field
+                :style="{ fontSize: '30px' }"
                 :value="formtCurrency(subtotal)"
                 :prefix="currencySymbol(pos_profile.currency)"
-                :label="frappe._('Total')"
+                :label="frappe._('TOTAL')"
                 outlined
                 dense
                 readonly
@@ -1303,7 +1304,7 @@
             </v-col>
           </v-row>
         </v-col>
-        <v-col cols="7">
+        <v-col cols="6">
           <v-row no-gutters class="pa-1 pt-2 pl-0">
             <!-- <v-col
               v-if="pos_profile.custom_allow_select_sales_order === 1"
@@ -1341,18 +1342,8 @@
                 >{{ __("Return") }}</v-btn
               >
             </v-col>
-            <v-col cols="4" class="pa-1">
-              <v-btn
-                block
-                class="pa-0"
-                color="error"
-                dark
-                @click="cancel_dialog = true"
-                >{{ __("Cancel") }}</v-btn
-              >
-            </v-col>
             <v-col
-              cols="4" class="pa-1">
+              cols="6" class="pa-1">
               <v-btn
                 block
                 class="pa-0"
@@ -1362,7 +1353,7 @@
                 >{{ __("Held") }}</v-btn
               >
             </v-col>
-            <v-col cols="4" class="pa-1">
+            <v-col cols="6" class="pa-1">
               <v-btn
                 block
                 class="pa-0"
@@ -1383,6 +1374,16 @@
                 >{{ __("PAY") }}</v-btn
               >
             </v-col>
+            <v-col cols="6" class="pa-1">
+              <v-btn
+                block
+                class="pa-0"
+                color="error"
+                dark
+                @click="cancel_dialog = true"
+                >{{ __("Cancel") }}</v-btn
+              >
+            </v-col>
             <!-- <v-col
               v-if="pos_profile.posa_allow_print_draft_invoices"
               cols="6"
@@ -1397,7 +1398,7 @@
                 >{{ __("Print Draft") }}</v-btn
               >
             </v-col> -->
-            <v-col
+            <!-- <v-col
               cols="6"
               class="pa-1"
             >
@@ -1409,7 +1410,7 @@
                 dark
                 >{{ __("Save as Order") }}</v-btn
               >
-            </v-col>
+            </v-col> -->
           </v-row>
         </v-col>
       </v-row>
