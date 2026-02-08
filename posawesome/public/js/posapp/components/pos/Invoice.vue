@@ -1002,7 +1002,7 @@
       class="cards mb-0 mt-3 py-0 grey lighten-5">
       <v-row no-gutters>
         <v-col cols="5">
-          <v-row no-gutters class="pa-1 pt-9 pr-1">
+          <v-row no-gutters class="pa-1 pt-2 pl-0">
             <v-col cols="6" class="pa-1">
               <v-text-field
                 :value="formtFloat(total_qty)"
@@ -1096,6 +1096,7 @@
 
             <v-col cols="6" class="pa-1 mt-2">
               <v-text-field
+                :style="{ fontSize: '30px' }"
                 :value="formtCurrency(subtotal)"
                 :prefix="currencySymbol(pos_profile.currency)"
                 :label="frappe._('Total')"
