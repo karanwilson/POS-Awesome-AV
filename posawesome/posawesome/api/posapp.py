@@ -1101,7 +1101,7 @@ def submit_invoice(invoice, data):
                 if integration_request_existing:
                     integration_request = frappe.get_doc("Integration Request", integration_request_existing)
                     if integration_request.status == "Completed":
-                        refund_status = refund_fs_payments(invoice_doc, method=None)
+                        refund_status = refund_fs_payments(invoice_doc)
                         if refund_status == "Completed":
                             # changing the integration_request.status above to "Cancelled", after a new one is created for refund.
                             integration_request.status = "Cancelled"
