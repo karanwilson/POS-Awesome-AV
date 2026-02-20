@@ -1873,6 +1873,13 @@ export default {
                   reject(custom_fs_transfer_status);
                 }
               }
+              else {
+                evntBus.$emit('show_mesage', {
+                  text: "Payment Unsuccessfull",
+                  color: "error",
+                });
+                reject(custom_fs_transfer_status);
+              }
             },
           });
         }
