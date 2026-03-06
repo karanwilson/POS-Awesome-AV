@@ -34,7 +34,7 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
 from frappe.utils.caching import redis_cache
 #import os
 
-from payments.payment_gateways.doctype.fs_settings.fs_settings import refund_fs_payments
+from payments.payment_gateways.doctype.fs_settings.fs_settings import refund_fs_payments_si
 
 
 @frappe.whitelist()
@@ -1101,7 +1101,7 @@ def submit_invoice(invoice, data):
                 if integration_request_existing:
                     integration_request = frappe.get_doc("Integration Request", integration_request_existing)
                     if integration_request.status == "Completed":
-                        refund_status = refund_fs_payments(invoice_doc)
+                        refund_status = refund_fs_payments_si(invoice_doc.name)
                         if refund_status == "Completed":
                             # changing the integration_request.status above to "Cancelled", after a new one is created for refund.
                             integration_request.status = "Cancelled"
