@@ -2909,6 +2909,7 @@ export default {
         callback: function (r) {
           if (r.message) {
             const data = r.message;
+            //console.log("update_item_detail data: ", data);
             if (data.batch_no_data) {
               item.batch_no_data = data.batch_no_data;
             }

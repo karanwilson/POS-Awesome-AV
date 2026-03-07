@@ -247,23 +247,90 @@ def get_items(
 
         if items_data:
             items = [d.item_code for d in items_data]
-            item_prices_data = frappe.get_all(
-                "Item Price",
-                fields=["item_code", "price_list_rate", "currency", "uom"],
-                filters={
-                    "price_list": price_list,
-                    "item_code": ["in", items],
-                    "currency": pos_profile.get("currency"),
-                    "selling": 1,
-                    "valid_from": ["<=", today],
-                    "customer": ["in", ["", None, customer]],
-                },
-                or_filters=[
-                    ["valid_upto", ">=", today],
-                    ["valid_upto", "in", ["", None]],
-                ],
-                order_by="valid_from ASC, valid_upto DESC",
-            )
+
+            if pos_profile.get("company") == "Pour Tous Distribution Center" and pos_profile.get("branch") == "Sunship":
+                #frappe.msgprint(_("pos_profile.get('company'): {0},  pos_profile.get('branch'): {1}").format(pos_profile.get('company'), pos_profile.get('branch')))
+                sunship_price_items = frappe.get_all(
+                    "Item Price",
+                    fields=["item_code"],
+                    filters={
+                        "price_list": "Sunship Selling",
+                        "item_code": ["in", items],
+                        "currency": pos_profile.get("currency"),
+                        "selling": 1,
+                        "valid_from": ["<=", today],
+                        "customer": ["in", ["", None, customer]],
+                    },
+                    or_filters=[
+                        ["valid_upto", ">=", today],
+                        ["valid_upto", "in", ["", None]],
+                    ],
+                    order_by="valid_from ASC, valid_upto DESC",
+                    pluck='item_code'
+                )
+
+                regular_price_items = []
+
+                for item in items:
+                    if item not in sunship_price_items:
+                        regular_price_items.append(item)
+
+                item_prices_data_sunship = frappe.get_all(
+                    "Item Price",
+                    fields=["item_code", "price_list_rate", "currency", "uom"],
+                    filters={
+                        "price_list": "Sunship Selling",
+                        "item_code": ["in", sunship_price_items],
+                        "currency": pos_profile.get("currency"),
+                        "selling": 1,
+                        "valid_from": ["<=", today],
+                        "customer": ["in", ["", None, customer]],
+                    },
+                    or_filters=[
+                        ["valid_upto", ">=", today],
+                        ["valid_upto", "in", ["", None]],
+                    ],
+                    order_by="valid_from ASC, valid_upto DESC",
+                )
+
+                item_prices_data_standard = frappe.get_all(
+                    "Item Price",
+                    fields=["item_code", "price_list_rate", "currency", "uom"],
+                    filters={
+                        "price_list": "Standard Selling",
+                        "item_code": ["in", regular_price_items],
+                        "currency": pos_profile.get("currency"),
+                        "selling": 1,
+                        "valid_from": ["<=", today],
+                        "customer": ["in", ["", None, customer]],
+                    },
+                    or_filters=[
+                        ["valid_upto", ">=", today],
+                        ["valid_upto", "in", ["", None]],
+                    ],
+                    order_by="valid_from ASC, valid_upto DESC",
+                )
+
+                item_prices_data = item_prices_data_sunship + item_prices_data_standard
+
+            else:
+                item_prices_data = frappe.get_all(
+                    "Item Price",
+                    fields=["item_code", "price_list_rate", "currency", "uom"],
+                    filters={
+                        "price_list": price_list,
+                        "item_code": ["in", items],
+                        "currency": pos_profile.get("currency"),
+                        "selling": 1,
+                        "valid_from": ["<=", today],
+                        "customer": ["in", ["", None, customer]],
+                    },
+                    or_filters=[
+                        ["valid_upto", ">=", today],
+                        ["valid_upto", "in", ["", None]],
+                    ],
+                    order_by="valid_from ASC, valid_upto DESC",
+                )
 
             item_prices = {}
             for d in item_prices_data:
@@ -1554,6 +1621,9 @@ def get_items_details(pos_profile, items_data):
 
 @frappe.whitelist()
 def get_item_detail(item, doc=None, warehouse=None, price_list=None):
+    item_doc = json.loads(doc)
+    #frappe.msgprint(_("item_doc.get(company): {0},  item_doc.get(branch): {1}, item_doc: {2} ").format(item_doc.get("company"), item_doc.get("branch"), item_doc))
+
     item = json.loads(item)
     today = nowdate()
     item_code = item.get("item_code")
@@ -1578,7 +1648,12 @@ def get_item_detail(item, doc=None, warehouse=None, price_list=None):
                             }
                         )
 
-    item["selling_price_list"] = price_list
+    if item_doc.get("company") == "Pour Tous Distribution Center" and item_doc.get("branch") == "Sunship" and frappe.db.exists(
+            "Item Price", {"item_code": item_code, "price_list": "Sunship Selling"}):
+        item["selling_price_list"] = "Sunship Selling"
+        item["price_list"] = "Sunship Selling"
+    else:
+        item["selling_price_list"] = price_list
 
     max_discount = frappe.get_value("Item", item_code, "max_discount")
     res = get_item_details(
