@@ -609,13 +609,24 @@ def add_taxes_from_tax_template(item, parent_doc):
     # Adapting to the new 'India Compliance App'
     if item.get("item_tax_template"):
         item_tax_template = item.get("item_tax_template")
-        taxes_template_details = frappe.db.sql(
-            """
-            SELECT tax_type FROM `tabItem Tax Template Detail` WHERE parent = '{0}'
-            AND (tax_type LIKE 'Output Tax CGST - %' or tax_type LIKE 'Output Tax SGST - %' or tax_type LIKE 'Output Tax CESS - %')
-            """.format(item_tax_template),
-            as_dict=1
-        )
+        if parent_doc.company_gstin[:2] == parent_doc.place_of_supply[:2]:
+            # Intra-State
+            taxes_template_details = frappe.db.sql(
+                """
+                SELECT tax_type FROM `tabItem Tax Template Detail` WHERE parent = '{0}'
+                AND (tax_type LIKE 'Output Tax CGST - %' or tax_type LIKE 'Output Tax SGST - %' or tax_type LIKE 'Output Tax CESS - %')
+                """.format(item_tax_template),
+                as_dict=1
+            )
+        else:
+            # Inter-State
+            taxes_template_details = frappe.db.sql(
+                """
+                SELECT tax_type FROM `tabItem Tax Template Detail` WHERE parent = '{0}'
+                AND (tax_type LIKE 'Output Tax IGST - %' or tax_type LIKE 'Output Tax CESS - %')
+                """.format(item_tax_template),
+                as_dict=1
+            )
 
         for tax_detail in taxes_template_details:
             tax_type = tax_detail.get("tax_type")
