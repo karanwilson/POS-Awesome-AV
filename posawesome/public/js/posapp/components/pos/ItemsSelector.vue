@@ -236,6 +236,26 @@ export default {
     show_coupons() {
       evntBus.$emit("show_coupons", "true");
     },
+    search_item_from_all_batches_barcode(batch_barcode) {
+      return new Promise((resolve, reject) => {
+        const vm = this;
+        frappe.call({
+          method: "posawesome.posawesome.api.posapp.search_all_batches_barcode",
+          args: {batch_barcode},
+          async: true,
+          callback: function (r) {
+            if (r.message) {
+              console.log("r.message: ", r.message);
+              resolve(r.message);
+            }
+            else {
+              console.log("Batch Barcode search: no results");
+              reject("Batch Barcode search: no results");
+            }
+          },
+        });
+      })
+    },
     get_items() {
       if (!this.pos_profile) {
         console.error("No POS Profile");
@@ -407,11 +427,35 @@ export default {
 
     async enter_event() {
       let match = false;
-      if (!this.filtred_items.length || !this.first_search) {
-        return;
+      let qty = "";
+      let new_item = "";
+      // if (!this.filtred_items.length || !this.first_search) {
+      //   return;
+      // }
+      if ((!this.filtred_items.length || !this.first_search) && this.pos_profile.company == "Pour Tous Purchasing Service") {
+        console.log("Barcode not found (searching empty batches): ", this.search);
+        console.log("this.search: ", this.search);
+        const item_code = await this.search_item_from_all_batches_barcode(this.search);
+        console.log("Barcode matched with item_code: ", item_code);
+        if (item_code) {
+          this.search = item_code;
+          qty = this.get_item_qty(this.search);   // does Math.abs on qty, and checks for weight (qty) from barcodes printed by weighing scale..
+          filtred_items = this.items.filter((item) => {
+            return item.item_code == item_code;
+          });
+          console.log("filtred_items: ", filtred_items);
+          new_item = { ...filtred_items[0] };
+          console.log("new_item: ", new_item);
+        }
+        else {
+          console.log("Batch Barcode search: no results for: ", this.search);
+          return;
+        }
       }
-      const qty = this.get_item_qty(this.first_search);   // does Math.abs on qty, and checks for weight (qty) from barcodes printed by weighing scale..
-      const new_item = { ...this.filtred_items[0] };
+      else {
+        qty = this.get_item_qty(this.first_search);   // does Math.abs on qty, and checks for weight (qty) from barcodes printed by weighing scale..
+        new_item = { ...this.filtred_items[0] };
+      }
       new_item.qty = flt(qty);
       new_item.item_barcode.forEach((element) => {
         if (this.search == element.barcode) {
@@ -806,7 +850,7 @@ export default {
                   break;
                 }
               }
-            return found;
+              return found;
             }
           });
           /* filtred_list = filtred_group_list.filter((item) => {

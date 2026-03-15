@@ -139,6 +139,11 @@ def update_opening_shift_data(data, pos_profile):
     data["stock_settings"] = {}
     data["stock_settings"].update({"allow_negative_stock": allow_negative_stock})
 
+@frappe.whitelist()
+def search_all_batches_barcode(batch_barcode):
+    batch_no = frappe.db.exists("Batch", {"custom_barcode": batch_barcode})
+    if batch_no:
+        return frappe.db.get_value("Batch", batch_no, 'item')
 
 @frappe.whitelist()
 def get_items(
@@ -1162,13 +1167,16 @@ def submit_invoice(invoice, data):
         except Exception as err:
             frappe.msgprint(str(err))
             # In case of FS Invoice: check if payment was received and refund if paid
-            if invoice_doc.custom_fs_account_number and frappe.defaults.get_user_default("company") != "Pour Tous Distribution Center":
+            if invoice_doc.custom_fs_account_number and frappe.defaults.get_user_default("company") == 'Pour Tous Purchasing Service':
                 # check the integration request status
                 integration_request_existing = frappe.get_value("Integration Request", {"reference_docname": invoice_doc.name}, "name")
                 if integration_request_existing:
                     integration_request = frappe.get_doc("Integration Request", integration_request_existing)
                     if integration_request.status == "Completed":
-                        refund_status = refund_fs_payments_si(invoice_doc.name)
+                        data = json.loads(integration_request.data)
+                        paid_fAmount = float(data["fAmount"])
+
+                        refund_status = refund_fs_payments_si(invoice_doc.name, paid_fAmount)
                         if refund_status == "Completed":
                             # changing the integration_request.status above to "Cancelled", after a new one is created for refund.
                             integration_request.status = "Cancelled"
