@@ -242,7 +242,7 @@ export default {
         frappe.call({
           method: "posawesome.posawesome.api.posapp.search_all_batches_barcode",
           args: {batch_barcode},
-          async: true,
+          async: false,
           callback: function (r) {
             if (r.message) {
               console.log("r.message: ", r.message);
@@ -833,20 +833,20 @@ export default {
         } else if (this.search) {
           filtred_list = filtred_group_list.filter((item) => {
             let found = false;
-            for (let element of item.batch_no_data) {
-              if (element.batch_barcode == this.search || element.batch_no == this.search) { // Matching with Batch Barcode
+            for (let element of item.item_barcode) {
+              if (element.barcode == this.search) { // Matching with Item Barcode
                 found = true;
-                this.flags.batch_no = null;
-                this.flags.batch_no = this.search;
                 break;
               }
             }
             if (found)
               return found;
             else {
-              for (let element of item.item_barcode) {
-                if (element.barcode == this.search) { // Matching with Batch Barcode
+              for (let element of item.batch_no_data) {
+                if (element.batch_barcode == this.search || element.batch_no == this.search) { // Matching with Batch Barcode
                   found = true;
+                  this.flags.batch_no = null;
+                  this.flags.batch_no = this.search;
                   break;
                 }
               }
