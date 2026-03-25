@@ -1626,7 +1626,8 @@ export default {
                 evntBus.$emit('balance_available', vm.balance_available);
               }
               else {
-                const display_msg = "Balance Response: " + r.message['Result'] + "; Balance: " + r.message['maxAmount']
+                //const display_msg = "Balance Response: " + r.message['Result'] + "; Balance: " + r.message['maxAmount']
+                const display_msg = "Balance Response: " + r.message['Result'] + "; Balance is less than 0";
                 evntBus.$emit('show_mesage', {
                   //text: 'Please verify the FS Account Number for this Customer',
                   text: display_msg,
