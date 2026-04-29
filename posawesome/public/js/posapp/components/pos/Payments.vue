@@ -1781,7 +1781,7 @@ export default {
 
     verify_fs_payment() {
       return new Promise((resolve, reject) => {
-        console.log("balance_available: ", this.balance_available);
+        //console.log("balance_available: ", this.balance_available);
         console.log("fs_offline: ", this.fs_offline);
         if (!this.fs_offline && !this.balance_available && this.balance_available !== 0) {
           evntBus.$emit('show_mesage', {
