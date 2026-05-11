@@ -151,7 +151,7 @@ export default {
           textOne.indexOf(searchText) > -1 ||
           textTwo.indexOf(searchText) > -1 ||
           textThree.indexOf(searchText) > -1 ||
-          textFour.indexOf(searchText) > -1 ||
+          //textFour.indexOf(searchText) > -1 ||
           //textFifth.indexOf(searchText) == 0 ||
           textFifth.indexOf(searchText) > -1
         );
