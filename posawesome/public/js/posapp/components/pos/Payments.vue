@@ -1844,8 +1844,10 @@ export default {
             async: false,
             callback: function (r) {
               if (r.message) {
-                const custom_fs_transfer_status = r.message["custom_fs_transfer_status"]
+                const custom_fs_transfer_status = r.message["custom_fs_transfer_status"];
                 vm.invoice_doc.custom_fs_transfer_status = custom_fs_transfer_status;
+                vm.invoice_doc.custom_fs_transaction_id = r.message["strDescription"];
+
                 if (vm.remarks)
                   vm.invoice_doc.remarks += "\n\n" + r.message["remarks"]; // in case of remarks
                 else if (r.message["remarks"] != "Null") // In case of "Insufficient Funds"
