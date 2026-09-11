@@ -1761,21 +1761,26 @@ export default {
 
     verify_invoice_status() {
       return new Promise((resolve, reject) => {
-        frappe.db
-          //.get_value("Sales Invoice", this.invoice_doc.return_against, "custom_fs_transfer_status")
-          .get_value("Sales Invoice", this.invoice_doc.return_against, ["custom_fs_account_number", "status"])
-          .then(( { message } ) => {
-            //if (message.custom_fs_transfer_status == "Insufficient Funds") {
-            if (message.custom_fs_account_number && (message.status != "Paid")) {
-              evntBus.$emit("show_mesage", {
-                //text: "For returns with Insufficient-Funds/Unpaid Invoices: please 'cancel-amend(edit)-save-submit' using the 'Sales Invoice' form",
-                text: "Returning an Unpaid FS Invoice: please 'cancel-amend(edit)-save-submit' using the 'Sales Invoice' form",
-                color: "error",
-              });
-              reject("Return: Unpaid Invoice");
-            }
-            else resolve("OK - Paid Invoice");
-          })
+        if (this.pos_profile.company == 'Pour Tous Distribution Center') {
+          resolve("OK - PTDC Exception Invoice");
+        }
+        else {
+          frappe.db
+            //.get_value("Sales Invoice", this.invoice_doc.return_against, "custom_fs_transfer_status")
+            .get_value("Sales Invoice", this.invoice_doc.return_against, ["custom_fs_account_number", "status"])
+            .then(( { message } ) => {
+              //if (message.custom_fs_transfer_status == "Insufficient Funds") {
+              if (message.custom_fs_account_number && (message.status != "Paid")) {
+                evntBus.$emit("show_mesage", {
+                  //text: "For returns with Insufficient-Funds/Unpaid Invoices: please 'cancel-amend(edit)-save-submit' using the 'Sales Invoice' form",
+                  text: "Returning an Unpaid FS Invoice: please 'cancel-amend(edit)-save-submit' using the 'Sales Invoice' form",
+                  color: "error",
+                });
+                reject("Return: Unpaid Invoice");
+              }
+              else resolve("OK - Paid Invoice");
+            })          
+        }
       })
     },
 
